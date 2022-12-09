@@ -38,11 +38,11 @@
             <tbody>
                 <tr>
                     <th>Закрыто КС</th>
-                    <td>12 000 000</td>
+                    <td>{{ balance.0|intcomma }}</td>
                 </tr>
                 <tr>
                     <th>Оплачено</th>
-                    <td>2 000 000</td>
+                    <td>{{ balance.1|intcomma }}</td>
                 </tr>
                 <tr>
                     <td>&nbsp</td>
@@ -50,7 +50,7 @@
                 </tr>
                 <tr>
                     <th>НАМ ДОЛЖНЫ</th>
-                    <td><span class = "text-primary">10 000 000</span></td>
+                    <td><span class = "text-primary">{{ balance.2|intcomma }}</span></td>
                 </tr>
             </tbody>
         </table>
@@ -67,25 +67,35 @@
             <thead>
                 <tr>
                     <th></th>
-                    <th>Сумма</th>
+                    <th>Аванс</th>
+                    <th>с КС2</th>
+                    <th>Удержания</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <th>Закрыто КС</th>
-                    <td>12 000 000</td>
+                    <th>Начислено</th>
+                    <td>{{ cashflow.0.0|intcomma }}</td>
+                    <td>{{ cashflow.0.1|intcomma }}</td>
+                    <td>{{ cashflow.0.2|intcomma }}</td>
                 </tr>
                 <tr>
                     <th>Оплачено</th>
-                    <td>2 000 000</td>
+                    <td>{{ cashflow.1.0|intcomma }}</td>
+                    <td>{{ cashflow.1.1|intcomma }}</td>
+                    <td>{{ cashflow.1.2|intcomma }}</td>
                 </tr>
                 <tr>
                     <td>&nbsp</td>
                     <td></td>
+                    <td></td>
+                    <td></td>
                 </tr>
                 <tr>
                     <th>НАМ ДОЛЖНЫ</th>
-                    <td><span class = "text-primary">10 000 000</span></td>
+                    <td><span class = "text-primary">{{ cashflow.2.0|intcomma }}</span></td>
+                    <td><span class = "text-primary">{{ cashflow.2.1|intcomma }}</span></td>
+                    <td><span class = "text-primary">{{ cashflow.2.2|intcomma }}</span></td>
                 </tr>
             </tbody>
         </table>
@@ -110,27 +120,27 @@
             <tbody>
                 <tr>
                     <th>Материалы</th>
-                    <td>10 000 000</td>
-                    <td>10 000 000</td>
-                    <td>20 000 000</td>
+                    <td>{{ working.0.0|intcomma }}</td>
+                    <td>{{ working.0.1|intcomma }}</td>
+                    <td>{{ working.0.2|intcomma }}</td>
                 </tr>
                                 <tr>
                     <th>Работы</th>
-                    <td>10 000 000</td>
-                    <td>10 000 000</td>
-                    <td>20 000 000</td>
+                    <td>{{ working.1.0|intcomma }}</td>
+                    <td>{{ working.1.1|intcomma }}</td>
+                    <td>{{ working.1.2|intcomma }}</td>
                 </tr>
                                 <tr>
                     <th>Прочее</th>
-                    <td>10 000 000</td>
-                    <td>10 000 000</td>
-                    <td>20 000 000</td>
+                    <td>{{ working.2.0|intcomma }}</td>
+                    <td>{{ working.2.1|intcomma }}</td>
+                    <td>{{ working.2.2|intcomma }}</td>
                 </tr>
                                                 <tr>
                     <th>ИТОГО</th>
-                    <td>10 000 000</td>
-                    <td>10 000 000</td>
-                    <td><span class = "text-primary">10 000 000</span></td>
+                    <td>{{ working.3.0|intcomma }}</td>
+                    <td>{{ working.3.1|intcomma }}</td>
+                    <td><span class = "text-primary">{{ working.3.2|intcomma }}</span></td>
                 </tr>
 
 

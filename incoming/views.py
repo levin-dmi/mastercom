@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.views.decorators.cache import cache_control
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.db.models import Q, Sum, FloatField
@@ -116,11 +117,48 @@ def contracts(request):
 
 
 # ------------------------------------------------------------------------
+# @cache_control(max_age=0, no_cache=True, no_store=True, must_revalidate=True)
 def contract_view(request, contract_id):
     obj = Contract.objects.get(pk=contract_id)
 
+    act_sum = Act.objects.aggregate(sum=Sum('total_sum', output_field=FloatField(), filter=Q(contract__pk=obj.pk)))['sum']
+    act_sum = 0 if not act_sum else round(act_sum, 2)
+    material_act_sum = Act.objects.aggregate(sum=Sum('material_sum', output_field=FloatField(), filter=Q(contract__pk=obj.pk)))['sum']
+    material_act_sum = 0 if not material_act_sum else round(material_act_sum, 2)
+    work_act_sum = Act.objects.aggregate(sum=Sum('work_sum', output_field=FloatField(), filter=Q(contract__pk=obj.pk)))['sum']
+    work_act_sum = 0 if not work_act_sum else round(work_act_sum, 2)
+    prepaid_pay_sum = Payment.objects.aggregate(sum=Sum('prepaid_sum', output_field=FloatField(), filter=Q(contract__pk=obj.pk)))['sum']
+    prepaid_pay_sum = 0 if not prepaid_pay_sum else round(prepaid_pay_sum, 2)
+    pay_sum = Payment.objects.aggregate(sum=Sum('total_sum', output_field=FloatField(), filter=Q(contract__pk=obj.pk)))['sum']
+    pay_sum = 0 if not pay_sum else round(pay_sum, 2)
+
+    balance = [Act.objects.aggregate(sum=Sum('total_sum', output_field=FloatField(), filter=Q(contract__pk=obj.pk)))['sum'],
+               Payment.objects.aggregate(sum=Sum('total_sum', output_field=FloatField(), filter=Q(contract__pk=obj.pk)))['sum']]
+    balance[0] = 0 if not balance[0] else round(balance[0], 2)
+    balance[1] = 0 if not balance[1] else round(balance[1], 2)
+    balance.append(round(balance[0]-balance[1], 2))
+    balance[0] = 0 if not balance[0] else round(balance[0], 2)
+    balance[1] = 0 if not balance[1] else round(balance[1], 2)
+    balance.append(round(balance[0]-balance[1], 2))
+
+    cashflow = []
+    retention_percent = 0 if not obj.retention_percent else obj.retention_percent
+    ctr_prepaid = 0 if not obj.prepaid else float(obj.prepaid)
+    payment_proportion = float(1 - float(ctr_prepaid) / float(obj.total_sum) - float(retention_percent) / 100)
+    cashflow.append([ctr_prepaid, round(act_sum*payment_proportion,2), round(act_sum*float(retention_percent)/100, 2)])
+    cashflow.append([prepaid_pay_sum, pay_sum - prepaid_pay_sum, 0])
+    cashflow.append([round(cashflow[0][0]-cashflow[1][0],2), round(cashflow[0][1]-cashflow[1][1],2), round(cashflow[0][2]-cashflow[1][2],2),])
+
+    working = []
+    working.append([obj.material_sum, material_act_sum, round(float(obj.material_sum)-material_act_sum, 2)])
+    working.append([obj.work_sum, work_act_sum, round(float(obj.work_sum)-work_act_sum, 2)])
+    working.append([obj.total_sum - obj.material_sum - obj.work_sum,
+                    round(act_sum - material_act_sum - work_act_sum, 2),
+                    round(float(obj.total_sum - obj.material_sum - obj.work_sum)-(act_sum - material_act_sum - work_act_sum),2)])
+    working.append([obj.total_sum, act_sum, round(float(obj.total_sum)-act_sum, 2)])
+
     env = {'contract_page': True, 'header': f"Договор №{obj.number} от {obj.date}"}
-    context = {'obj': obj, 'env': env}
+    context = {'obj': obj, 'env': env, 'balance': balance, 'cashflow': cashflow, 'working': working}
     return render(request, 'contracts/contract_view.html', context)
 
 
