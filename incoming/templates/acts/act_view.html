@@ -1,0 +1,14 @@
+{% extends "layout/basic_acts.html" %}
+
+{% block content %}
+<h3>{{ act.number }}</h3>
+<p><strong>Дата: </strong>{{ act.date }}</p>
+<p><strong>Договор: </strong>{{ act.contract.number }}</p>
+<p><strong>Статус: </strong>{{ act.status.name }}</p>
+<p><strong>Сумма: </strong>{{ act.total_sum }}</p>
+<p><strong>Сумма материалов: </strong>{{ act.material_sum }}</p>
+<p><strong>Сумма работ: </strong>{{ act.work_sum }}</p>
+
+
+{% endblock %}
+

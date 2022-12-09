@@ -1,0 +1,95 @@
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<div class="card p-0">
+    <div class="card-header">
+        <a href="{% if env.project_page %} {% url 'project_add' %}
+                 {% elif env.contract_page %} {% url 'contract_add' %}
+                 {% elif env.act_page %} {% url 'act_add' %}
+                 {% elif env.payment_page %} {% url 'payment_add' %}
+                 {% endif %}" class="btn btn-outline-primary btn-sm" role="button">Создать</a>
+    </div><!-- /card-header -->
+
+    <div class="card-body p-0">
+    <table class="table table-hover text-nowrap table-sm m-0">
+        <thead>
+        <tr>
+            {% if env.project_page %}
+                <th>Код проекта</th>
+                <th>Наименование</th>
+            {% elif env.contract_page %}
+                <th>Номер</th>
+                <th>Дата</th>
+                <th>Название</th>
+                <th>Проект</th>
+                <th>Сумма</th>
+                <th>Статус</th>
+            {% elif env.act_page %}
+                <th>Номер</th>
+                <th>Дата</th>
+                <th>Договор</th>
+                <th>Сумма</th>
+                <th>Статус</th>
+            {% elif env.payment_page %}
+                <th>Номер платежа</th>
+                <th>Дата</th>
+                <th>Договор</th>
+                <th>Сумма</th>
+                <th>В том числе аванс</th>
+                <th>Статус</th>
+            {% endif %}
+                <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for obj in objs %}
+        <tr>
+            {% if env.project_page %}
+                <td><a href="{% url 'project_view' obj.pk %}">{{ obj.key }}</a></td>
+                <td>{{ obj.name }}</td>
+                <td class="text-right">
+                    <a href="{% url 'project_update' obj.pk %}"><i class="fa fa-pencil-square-o"></i></a>&nbsp
+                    <a href="{% url 'project_delete' obj.pk %}" ><i class="fa fa-trash" aria-hidden="true" style="color: red;"></i></a>
+                </td>
+            {% elif env.contract_page %}
+                <td><a href="{% url 'contract_view' obj.pk %}">{{ obj.number }}</a></td>
+                <td>{{ obj.date }}</td>
+                <td>{{ obj.name }}</td>
+                <td>{{ obj.project.key }}</td>
+                <td>{{ obj.total_sum }}</td>
+                <td>{{ obj.status.name }}</td>
+                <td class="text-right">
+                    <a href="{% url 'contract_update' obj.pk %}"><i class="fa fa-pencil-square-o"></i></a>&nbsp
+                    <a href="{% url 'contract_delete' obj.pk %}" ><i class="fa fa-trash" aria-hidden="true" style="color: red;"></i></a>
+                </td>
+            {% elif env.act_page %}
+                <td><a href="{% url 'act_view' obj.pk %}">{{ obj.number }}</a></td>
+                <td>{{ obj.date }}</td>
+                <td>{{ obj.contract.number }}</td>
+                <td>{{ obj.total_sum }}</td>
+                <td>{{ obj.status.name }}</td>
+                <td class="text-right">
+                    <a href="{% url 'act_update' obj.pk %}"><i class="fa fa-pencil-square-o"></i></a>&nbsp
+                    <a href="{% url 'act_delete' obj.pk %}" ><i class="fa fa-trash" aria-hidden="true" style="color: red;"></i></a>
+                </td>
+            {% elif env.payment_page %}
+                <td><a href="{% url 'payment_view' obj.pk %}">{{ obj.number }}</a></td>
+                <td>{{ obj.date }}</td>
+                <td>{{ obj.contract.number }}</td>
+                <td>{{ obj.total_sum }}</td>
+                <td>{{ obj.prepaid_sum }}</td>
+                <td>{{ obj.status.name }}</td>
+                <td class="text-right">
+                    <a href="{% url 'payment_update' obj.pk %}"><i class="fa fa-pencil-square-o"></i></a>&nbsp
+                    <a href="{% url 'payment_delete' obj.pk %}" ><i class="fa fa-trash" aria-hidden="true" style="color: red;"></i></a>
+                </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+
+        </tbody>
+    </table>
+    </div> <!-- /card-body -->
+</div><!-- /card -->
+{% endblock %}
+

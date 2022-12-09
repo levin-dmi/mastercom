@@ -1,0 +1,13 @@
+{% extends "layout/basic.html" %}
+
+{% block incoming_content %}
+    <h1>Договоры {{ my_name }}</h1>
+    <div>
+        <a href="{% url 'contracts' %}">Список</a>
+        <a href="{% url 'contract_add' %}">Добавить</a>
+    </div>
+    <div>
+        {% block content %}
+        {% endblock %}
+    </div>
+{% endblock %}

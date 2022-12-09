@@ -1,0 +1,11 @@
+{% extends "layout/basic_payments.html" %}
+
+{% block content %}
+<h1>Удаление Платежа</h1>
+<form method="post">
+    {% csrf_token %}
+    <p>Вы уверены что хотите удалить "{{ object.number }}"?</p>
+    <input type="submit" value="Подтвердить">
+</form>
+{% endblock %}
+

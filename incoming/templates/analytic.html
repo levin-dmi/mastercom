@@ -1,0 +1,57 @@
+{% extends "layout/basic.html" %}
+
+{% block content %}
+{% for prj_name, prj in objs.items %}
+
+<div class="card border-secondary p-0 mb-4">
+    <!--<div class="card-header">
+        <h5>{{ prj_name }}</h5>
+    </div>--><!-- /card-header -->
+    <h5 class="card-header">{{ prj.name }}</h5>
+    <div class="card-body p-0">
+    <table class="table table-hover text-nowrap table-sm m-0">
+        <thead>
+            <tr>
+                <th>Договор</th>
+                <th>Дата</th>
+                <th>Сумма</th>
+                <th>Закрыто КС2</th>
+                <th>Оплачено</th>
+                <th>Долг по авансу</th>
+                <th>Долг по КС</th>
+                <th>Удержано</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for  ctr_name, ctr in prj.contracts.items %}
+            <tr>
+                <td><a href="{% url 'contract_view' ctr.pk %}">{{ ctr.num_name|truncatechars:25}}</a> </td>
+                <td>{{ ctr.date|date:'d.m.y' }}</td>
+                <td>{{ ctr.total_sum }}</td>
+                <td>{{ ctr.act_sum }}</td>
+                <td>{{ ctr.pay_sum }}</td>
+                <td>{{ ctr.debt_prepaid_sum }}</td>
+                <td>{{ ctr.debt_act_sum }}</td>
+                <td>{{ ctr.retention }}</td>
+            </tr>
+            {% endfor %}
+
+            <tr class="table-info">
+                <td>ИТОГО</td>
+                <td></td>
+                <td>{{ prj.sum.total_sum }}</td>
+                <td>{{ prj.sum.act_sum }}</td>
+                <td>{{ prj.sum.pay_sum }}</td>
+                <td>{{ prj.sum.debt_prepaid_sum }}</td>
+                <td>{{ prj.sum.debt_act_sum }}</td>
+                <td>{{ prj.sum.retention }}</td>
+            </tr>
+
+        </tbody>
+    </table>
+    </div> <!-- /card-body -->
+</div><!-- /card -->
+
+{% endfor %}
+{% endblock %}
+
