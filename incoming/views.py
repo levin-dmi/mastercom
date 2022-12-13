@@ -101,12 +101,8 @@ class ProjectUpdateView(UpdateView):
 class ProjectDeleteView(DeleteView):
     model = Project
     template_name = 'projects/project_delete.html'
-    form_class = ProjectForm
     success_url = reverse_lazy('projects')
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        return context
     
     
 def contracts(request):
@@ -186,12 +182,8 @@ class ContractUpdateView(UpdateView):
 class ContractDeleteView(DeleteView):
     model = Contract
     template_name = 'contracts/contract_delete.html'
-    form_class = ContractForm
     success_url = reverse_lazy('contracts')
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        return context
     
 
 def acts(request):
@@ -231,12 +223,12 @@ class ActUpdateView(UpdateView):
 class ActDeleteView(DeleteView):
     model = Act
     template_name = 'acts/act_delete.html'
-    form_class = ActForm
+    # form_class = ActForm
     success_url = reverse_lazy('acts')
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        return context
+    # def get_context_data(self, **kwargs):
+    #     context = super().get_context_data(**kwargs)
+    #     return context
 
 
 def payments(request):
@@ -276,9 +268,4 @@ class PaymentUpdateView(UpdateView):
 class PaymentDeleteView(DeleteView):
     model = Payment
     template_name = 'payments/payment_delete.html'
-    form_class = PaymentForm
     success_url = reverse_lazy('payments')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        return context
