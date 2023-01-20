@@ -21,7 +21,7 @@ class Contract(models.Model):
     date = models.DateField(null=True, blank=True, verbose_name='Дата')
     name = models.CharField(max_length=32, null=True, blank=True, verbose_name='Название')
     description = models.TextField(null=True, blank=True, verbose_name='Описание')
-    project = models.ForeignKey('Project', null=False, on_delete=models.PROTECT, verbose_name='Проект')
+    project = models.ForeignKey('Project', null=True, on_delete=models.PROTECT, verbose_name='Проект')
     total_sum = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name='Сумма')
     material_sum = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name='Материалы')
     work_sum = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name='Работы')
@@ -30,7 +30,7 @@ class Contract(models.Model):
                                              verbose_name='Удержание аванса')
     retention_percent = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True,
                                             verbose_name='Процент удержания с КС')
-    status = models.ForeignKey('ContractStatus', null=False, on_delete=models.PROTECT, verbose_name='Статус')
+    status = models.ForeignKey('ContractStatus', null=True, on_delete=models.PROTECT, verbose_name='Статус')
     objects = models.Manager()
 
     def __str__(self):
@@ -45,8 +45,8 @@ class Contract(models.Model):
 class Act(models.Model):
     number = models.CharField(max_length=16, db_index=True, null=True, blank=True, verbose_name='Номер')
     date = models.DateField(null=True, blank=True, verbose_name='Дата')
-    contract = models.ForeignKey('Contract', null=False, on_delete=models.PROTECT, verbose_name='Договор')
-    status = models.ForeignKey('ActStatus', null=False, on_delete=models.PROTECT, verbose_name='Статус')
+    contract = models.ForeignKey('Contract', null=True, on_delete=models.PROTECT, verbose_name='Договор')
+    status = models.ForeignKey('ActStatus', null=True, on_delete=models.PROTECT, verbose_name='Статус')
     total_sum = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name='Сумма')
     material_sum = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name='Материалы')
     work_sum = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name='Работы')
@@ -66,7 +66,7 @@ class Payment(models.Model):
     number = models.CharField(max_length=16, db_index=True, null=True, blank=True, verbose_name='Номер')
     date = models.DateField(null=True, blank=True, verbose_name='Дата')
     contract = models.ForeignKey('Contract', null=True, on_delete=models.SET_NULL, verbose_name='Договор')
-    status = models.ForeignKey('PaymentStatus', null=False, on_delete=models.PROTECT, verbose_name='Статус')
+    status = models.ForeignKey('PaymentStatus', null=True, on_delete=models.PROTECT, verbose_name='Статус')
     total_sum = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name='Сумма')
     prepaid_sum = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True,
                                       verbose_name='Сумма аванса')
@@ -142,9 +142,10 @@ def num_with_spaces(num) -> str:
     """Возвращает число в виде строки с разрядами, разделенными пробелом и запятой, разделяющей дробную часть"""
     return f"{num:,}".replace(',', ' ').replace('.', ',')
 
+
 def int_num_with_spaces(num) -> str:
     """Возвращает число в виде строки с разрядами, разделенными пробелом и без дробной части"""
     if num:
         return f"{round(num):,}".replace(',', ' ').replace('.', ',')
     else:
-        return 0
+        return '0'

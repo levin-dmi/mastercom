@@ -5,6 +5,7 @@
 <form method="post">
     {% csrf_token %}
     <p>Вы уверены что хотите удалить "{{ object.key }}"?</p>
+    <input type="button" onclick="history.back();" value="Отменить"/>
     <input type="submit" value="Подтвердить">
 </form>
 {% endblock %}

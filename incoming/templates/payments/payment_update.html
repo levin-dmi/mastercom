@@ -5,6 +5,7 @@
     {% csrf_token %}
     {{ form.as_p }}
     <input type="submit" value="Применить">
+    <input type="button" onclick="history.back();" value="Отменить"/>
 </form>
 {% endblock %}
 

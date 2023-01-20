@@ -1,20 +1,26 @@
 {% extends "layout/basic_projects.html" %}
-{% load humanize %}
+{% load filters %}
 
 {% block content %}
 <div class="card border-secondary mb-4">
-    <h5 class="card-header">{{ obj.name }}</h5>
+    <div class="card-header d-flex">
+        <h5 class="mb-0 me-2">{{ obj.name }}</h5>
+        <a href="{% url 'contract_update' obj.pk %}" role="button" class="me-2">редактировать</a>
+        <a href="{% url 'act_add_to_ctr' obj.pk %}" role="button" class="me-2">+ акт</a>
+        <a href="{% url 'payment_add_to_ctr' obj.pk %}" role="button">+ платеж</a>
+    </div><!-- /card-header -->
+
     <div class="row p-3">
     <div class="col">
-        <p><strong>Сумма: <span style="color: green;">{{ obj.total_sum|intcomma }}</span></strong></p>
-        <p><strong>Проект: </strong>{{ obj.project.key }}</p>
+        <p><strong>Сумма: <span style="color: green;">{{ obj.total_sum|currency }}</span></strong></p>
+        <p><strong>Проект: </strong>{{ obj.project.key }} ({{ obj.project.name }})</p>
         <p><strong>Статус: </strong>{{ obj.status.name }}</p>
         <p><strong>Процент удержаний: </strong>{{ obj.retention_percent }}%</p>
     </div>
     <div class="col">
-    <p><strong>Сумма материалов: </strong>{{ obj.material_sum|intcomma }}</p>
-    <p><strong>Сумма работ: </strong>{{ obj.work_sum|intcomma }}</p>
-    <p><strong>Аванс: </strong>{{ obj.prepaid|intcomma }}</p>
+    <p><strong>Сумма материалов: </strong>{{ obj.material_sum|currency }}</p>
+    <p><strong>Сумма работ: </strong>{{ obj.work_sum|currency }}</p>
+    <p><strong>Аванс: </strong>{{ obj.prepaid|currency }}</p>
     <p><strong>Способ закрытия аванса: </strong>{{ obj.prepaid_close_method.name }}</p>
     </div>
     <div class="col">
@@ -38,11 +44,11 @@
             <tbody>
                 <tr>
                     <th>Закрыто КС</th>
-                    <td>{{ balance.0|intcomma }}</td>
+                    <td>{{ balance.0|currency }}</td>
                 </tr>
                 <tr>
                     <th>Оплачено</th>
-                    <td>{{ balance.1|intcomma }}</td>
+                    <td>{{ balance.1|currency }}</td>
                 </tr>
                 <tr>
                     <td>&nbsp</td>
@@ -50,7 +56,7 @@
                 </tr>
                 <tr>
                     <th>НАМ ДОЛЖНЫ</th>
-                    <td><span class = "text-primary">{{ balance.2|intcomma }}</span></td>
+                    <td><span class = "text-primary">{{ balance.2|currency }}</span></td>
                 </tr>
             </tbody>
         </table>
@@ -75,15 +81,15 @@
             <tbody>
                 <tr>
                     <th>Начислено</th>
-                    <td>{{ cashflow.0.0|intcomma }}</td>
-                    <td>{{ cashflow.0.1|intcomma }}</td>
-                    <td>{{ cashflow.0.2|intcomma }}</td>
+                    <td>{{ cashflow.0.0|currency }}</td>
+                    <td>{{ cashflow.0.1|currency }}</td>
+                    <td>{{ cashflow.0.2|currency }}</td>
                 </tr>
                 <tr>
                     <th>Оплачено</th>
-                    <td>{{ cashflow.1.0|intcomma }}</td>
-                    <td>{{ cashflow.1.1|intcomma }}</td>
-                    <td>{{ cashflow.1.2|intcomma }}</td>
+                    <td>{{ cashflow.1.0|currency }}</td>
+                    <td>{{ cashflow.1.1|currency }}</td>
+                    <td>{{ cashflow.1.2|currency }}</td>
                 </tr>
                 <tr>
                     <td>&nbsp</td>
@@ -93,9 +99,9 @@
                 </tr>
                 <tr>
                     <th>НАМ ДОЛЖНЫ</th>
-                    <td><span class = "text-primary">{{ cashflow.2.0|intcomma }}</span></td>
-                    <td><span class = "text-primary">{{ cashflow.2.1|intcomma }}</span></td>
-                    <td><span class = "text-primary">{{ cashflow.2.2|intcomma }}</span></td>
+                    <td><span class = "text-primary">{{ cashflow.2.0|currency }}</span></td>
+                    <td><span class = "text-primary">{{ cashflow.2.1|currency }}</span></td>
+                    <td><span class = "text-primary">{{ cashflow.2.2|currency }}</span></td>
                 </tr>
             </tbody>
         </table>
@@ -120,27 +126,27 @@
             <tbody>
                 <tr>
                     <th>Материалы</th>
-                    <td>{{ working.0.0|intcomma }}</td>
-                    <td>{{ working.0.1|intcomma }}</td>
-                    <td>{{ working.0.2|intcomma }}</td>
+                    <td>{{ working.0.0|currency }}</td>
+                    <td>{{ working.0.1|currency }}</td>
+                    <td>{{ working.0.2|currency }}</td>
                 </tr>
                                 <tr>
                     <th>Работы</th>
-                    <td>{{ working.1.0|intcomma }}</td>
-                    <td>{{ working.1.1|intcomma }}</td>
-                    <td>{{ working.1.2|intcomma }}</td>
+                    <td>{{ working.1.0|currency }}</td>
+                    <td>{{ working.1.1|currency }}</td>
+                    <td>{{ working.1.2|currency }}</td>
                 </tr>
                                 <tr>
                     <th>Прочее</th>
-                    <td>{{ working.2.0|intcomma }}</td>
-                    <td>{{ working.2.1|intcomma }}</td>
-                    <td>{{ working.2.2|intcomma }}</td>
+                    <td>{{ working.2.0|currency }}</td>
+                    <td>{{ working.2.1|currency }}</td>
+                    <td>{{ working.2.2|currency }}</td>
                 </tr>
                                                 <tr>
                     <th>ИТОГО</th>
-                    <td>{{ working.3.0|intcomma }}</td>
-                    <td>{{ working.3.1|intcomma }}</td>
-                    <td><span class = "text-primary">{{ working.3.2|intcomma }}</span></td>
+                    <td>{{ working.3.0|currency }}</td>
+                    <td>{{ working.3.1|currency }}</td>
+                    <td><span class = "text-primary">{{ working.3.2|currency }}</span></td>
                 </tr>
 
 
@@ -151,5 +157,37 @@
     </div>
     </div> <!-- card -->
 </div>
+
+
+<div class="card border-secondary mb-4">
+    <h5 class="card-header">Сверка по договору</h5>
+    <div class="card-body p-0">
+    <table class="table table-hover text-nowrap table-sm m-0">
+        <thead>
+            <tr>
+                <th>Дата</th>
+                <th>Документ</th>
+                <th>Дебет (нам должны)</th>
+                <th>Кредит (мы должны)</th>
+                <th>Статус документа</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rec in recon %}
+
+            <tr {% if rec.total %} class="table-info" {% endif %}>
+                <td>{{ rec.date }}</td>
+                <td>{{ rec.doc }}</td>
+                <td>{{ rec.debet|currency }}</td>
+                <td>{{ rec.kredit|currency }}</td>
+                <td><span {% if not rec.status_ok %} style="color: red;" {% endif %}>{{ rec.status }}</span></td>
+            </tr>
+            {% endfor %}
+
+        </tbody>
+    </table>
+    </div>
+</div> <!-- sverka card -->
+
 {% endblock %}
 

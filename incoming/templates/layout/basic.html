@@ -34,17 +34,16 @@
 
         <div class="dropdown">
             <a href="{% url 'index' %}" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                <img src="{% static 'incoming/levin.jpg' %}" alt="" width="32" height="32" class="rounded-circle me-3 ms-2">
-                <span class="fs-6">Дмитрий Левин</span>
+                <!--<img src="{% static 'incoming/avatar.png' %}" alt="" width="32" height="32" class="rounded-circle me-3 ms-2">-->
+                <span class="fs-6">{{ user.first_name }}&nbsp{{ user.last_name }}</span>
             </a>
-              <!--
+
               <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
-                
-                <li><a class="dropdown-item" href="#">Настройки</a></li>
+                <!--<li><a class="dropdown-item" href="#">Настройки</a></li>
                 <li><a class="dropdown-item" href="#">Profile</a></li>
-                <li><hr class="dropdown-divider"></li> 
-                <li><a class="dropdown-item" href="#">Выход</a></li>
-              </ul> -->
+                <li><hr class="dropdown-divider"></li> -->
+                <li><a class="dropdown-item" href="{% url 'logout' %}">Выход</a></li>
+              </ul>
         </div>
     </div> <!-- Левая панель-->
 

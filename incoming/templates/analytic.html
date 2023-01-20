@@ -4,10 +4,11 @@
 {% for prj_name, prj in objs.items %}
 
 <div class="card border-secondary p-0 mb-4">
-    <!--<div class="card-header">
-        <h5>{{ prj_name }}</h5>
-    </div>--><!-- /card-header -->
-    <h5 class="card-header">{{ prj.name }}</h5>
+    <div class="card-header d-flex">
+        <h5 class="mb-0 me-2">{{ prj.name }}</h5>
+        <a href="{% url 'contract_add_to_prj' prj.pk %}" role="button">+ договор</a>
+    </div><!-- /card-header -->
+    <!--<h5 class="card-header">{{ prj.name }}</h5>-->
     <div class="card-body p-0">
     <table class="table table-hover text-nowrap table-sm m-0">
         <thead>

@@ -55,7 +55,7 @@
                 <td><a href="{% url 'contract_view' obj.pk %}">{{ obj.number }}</a></td>
                 <td>{{ obj.date }}</td>
                 <td>{{ obj.name }}</td>
-                <td>{{ obj.project.key }}</td>
+                <td>{{ obj.project.key }} ({{ obj.project.name }})</td>
                 <td>{{ obj.total_sum }}</td>
                 <td>{{ obj.status.name }}</td>
                 <td class="text-right">

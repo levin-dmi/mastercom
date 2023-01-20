@@ -12,6 +12,11 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 
 from pathlib import Path
 
+try:
+    from .local_settings import *
+except ImportError:
+    from .deployment_settings import *
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,12 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-)yqd*q6o&jg7=+b2y1w2gqa9f_-i**cdpi3e0begd%j#a8g_8&'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
+SECRET_KEY = 'django-insecure-)yqd*q6o&jg7=+b2y1w2gqa9f_-i**cdpi3e0begd%j#a8g123'
 
 
 # Application definition
@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'incoming.apps.IncomingConfig',
-    'django.contrib.humanize',
+    # 'django.contrib.humanize',
 ]
 
 MIDDLEWARE = [
@@ -70,17 +70,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'mastercom.wsgi.application'
-
-
-# Database
-# https://docs.djangoproject.com/en/3.2/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
 
 
 # Password validation
@@ -125,3 +114,22 @@ STATIC_URL = '/static/'
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGIN_URL = '/accounts/login'
+LOGIN_REDIRECT_URL = '/incoming'
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.timeweb.ru'
+EMAIL_HOST_USER = 'my@mastercom.su'
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+EMAIL_HOST_PASSWORD = 'Madagaskar0'
+SERVER_EMAIL = EMAIL_HOST_USER
+EMAIL_USE_LOCALTIME = True
+
+EMAIL_PORT = 2525
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+
+ADMINS = (('ME', 'levin.dmi@gmail.com'), )
+MANAGERS = ADMINS
