@@ -36,6 +36,7 @@
                 <th>Договор</th>
                 <th>Сумма</th>
                 <th>В том числе аванс</th>
+                <th>Возврат удержаний</th>
                 <th>Статус</th>
             {% endif %}
                 <th></th>
@@ -78,6 +79,7 @@
                 <td>{{ obj.contract.number }}</td>
                 <td>{{ obj.total_sum }}</td>
                 <td>{{ obj.prepaid_sum }}</td>
+                <td>{{ obj.retention_sum }}</td>
                 <td>{{ obj.status.name }}</td>
                 <td class="text-right">
                     <a href="{% url 'payment_update' obj.pk %}"><i class="fa fa-pencil-square-o"></i></a>&nbsp

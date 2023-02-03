@@ -6,7 +6,8 @@
 <p><strong>Номер: </strong>{{ pay.contract.number }}</p>
 <p><strong>Статус: </strong>{{ pay.status }}</p>
 <p><strong>Сумма: </strong>{{ pay.total_sum}}</p>
-<p><strong>Сумма аванса: </strong>{{ pay.prepaid_sum }}</p>
+<p><strong>В том числе сумма аванса: </strong>{{ pay.prepaid_sum }}</p>
+<p><strong>В том числе сумма удержаний: </strong>{{ pay.retention_sum }}</p>
 
 {% endblock %}
 

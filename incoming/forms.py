@@ -24,4 +24,4 @@ class ActForm(ModelForm):
 class PaymentForm(ModelForm):
     class Meta:
         model = Payment
-        fields = ('number', 'date', 'contract', 'total_sum', 'prepaid_sum', 'status')
+        fields = ('number', 'date', 'contract', 'total_sum', 'prepaid_sum', 'retention_sum', 'status')

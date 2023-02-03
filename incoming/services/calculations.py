@@ -1,6 +1,5 @@
 """ Модуль содержит расчеты для приложения incoming"""
 import enum
-from dataclasses import dataclass
 from django.db.models import Q, Sum, FloatField
 from incoming.models import Contract, Act, Payment
 from typing import List

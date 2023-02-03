@@ -30,6 +30,11 @@ def index(request):
             'sum']
         if not prepaid_pay_sym:
             prepaid_pay_sym = 0
+        retention_pay_sym = \
+            Payment.objects.aggregate(sum=Sum('retention_sum', output_field=FloatField(), filter=Q(contract__pk=ctr.pk)))[
+                'sum']
+        if not retention_pay_sym:
+            retention_pay_sym = 0
 
         retention_percent = 0 if not ctr.retention_percent else ctr.retention_percent
         ctr_prepaid = 0 if not ctr.prepaid else ctr.prepaid
@@ -39,7 +44,7 @@ def index(request):
 
         debt_act_sum = calc_paid_from_acts(float(ctr.total_sum), float(ctr_prepaid), prepaid_type,
                                            float(retention_percent), float(act_sum)) \
-                       - (pay_sum - prepaid_pay_sym)
+                       - (pay_sum - prepaid_pay_sym - retention_pay_sym)
 
         ctr_data = {'pk': ctr.pk,
                     'num_name': f"{ctr.number} ({ctr.name})",
@@ -50,7 +55,7 @@ def index(request):
 
                     'debt_act_sum': int_num_with_spaces(debt_act_sum),
                     'debt_prepaid_sum': int_num_with_spaces(float(ctr_prepaid) - prepaid_pay_sym),
-                    'retention': int_num_with_spaces(act_sum * float(retention_percent) / 100),
+                    'retention': int_num_with_spaces(act_sum * float(retention_percent) / 100 - retention_pay_sym),
                     }
         objs[ctr.project.key]['contracts'][ctr.pk] = ctr_data
 
@@ -63,7 +68,7 @@ def index(request):
                                                                                             0) + float(
             ctr_prepaid) - prepaid_pay_sym
         objs[ctr.project.key]['sum']['retention'] = objs[ctr.project.key]['sum'].get('retention', 0) + act_sum * float(
-            retention_percent) / 100
+            retention_percent) / 100 - retention_pay_sym
 
     env = {'analytic_page': True, 'header': 'Аналитика'}
 
@@ -142,12 +147,13 @@ def contract_view(request, contract_id):
     work_act_sum = act_sum_for_contract(contract_id, 'work_sum')
     pay_sum = payment_sum_for_contract(contract_id, 'total_sum')
     prepaid_pay_sum = payment_sum_for_contract(contract_id, 'prepaid_sum')
+    retention_pay_sum = payment_sum_for_contract(contract_id, 'retention_sum')
 
     balance = [act_sum, pay_sum, act_sum - pay_sum]
 
     paid_from_acts = calc_paid_from_acts(total_sum, prepaid, prepaid_type, retention_percent, act_sum)
     cashflow = list([[prepaid, paid_from_acts, act_sum * retention_percent / 100],
-                     [prepaid_pay_sum, pay_sum - prepaid_pay_sum, 0]])
+                     [prepaid_pay_sum, pay_sum - prepaid_pay_sum - retention_pay_sum, retention_pay_sum]])
     cashflow.append([cashflow[0][0] - cashflow[1][0], cashflow[0][1] - cashflow[1][1],
                      cashflow[0][2] - cashflow[1][2], ])
 

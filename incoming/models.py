@@ -1,4 +1,12 @@
 from django.db import models
+import enum
+from incoming.middleware import get_current_user
+
+
+class LogAction(enum.Enum):
+    create = 'Новая запись'
+    update = 'Изменение в записи'
+    delete = 'Удаление записи'
 
 
 class Project(models.Model):
@@ -41,6 +49,23 @@ class Contract(models.Model):
         verbose_name = 'Договор'
         ordering = ['date']
 
+    def save(self, *args, **kwargs):
+        orig_obj = Contract.objects.get(pk=self.pk) if self.pk else None
+        save_to_change_log(self, orig_obj,
+                           {'Номер договора': self.number,
+                            'Дата договора': self.date,
+                            'Новая сумма': self.total_sum},
+                           None if not orig_obj else {'Старая сумма': str(orig_obj.total_sum)})
+        super(Contract, self).save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        orig_obj = Contract.objects.get(pk=self.pk) if self.pk else None
+        save_delete_to_change_log(orig_obj,
+                                  {'Номер договора': orig_obj.number,
+                                   'Дата договора': orig_obj.date,
+                                   'Сумма': self.total_sum})
+        super(Contract, self).delete(*args, **kwargs)
+
 
 class Act(models.Model):
     number = models.CharField(max_length=16, db_index=True, null=True, blank=True, verbose_name='Номер')
@@ -61,15 +86,34 @@ class Act(models.Model):
         verbose_name = 'Акт'
         ordering = ['date']
 
+    def save(self, *args, **kwargs):
+        orig_obj = Act.objects.get(pk=self.pk) if self.pk else None
+        save_to_change_log(self, orig_obj,
+                           {'Номер акта': self.number,
+                            'Дата акта': self.date,
+                            'Новая сумма': self.total_sum},
+                           None if not orig_obj else {'Старая сумма': str(orig_obj.total_sum)})
+        super(Act, self).save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        orig_obj = Act.objects.get(pk=self.pk) if self.pk else None
+        save_delete_to_change_log(orig_obj,
+                                  {'Номер акта': orig_obj.number,
+                                   'Дата акта': orig_obj.date,
+                                   'Сумма': self.total_sum})
+        super(Act, self).delete(*args, **kwargs)
+
 
 class Payment(models.Model):
     number = models.CharField(max_length=16, db_index=True, null=True, blank=True, verbose_name='Номер')
     date = models.DateField(null=True, blank=True, verbose_name='Дата')
     contract = models.ForeignKey('Contract', null=True, on_delete=models.SET_NULL, verbose_name='Договор')
     status = models.ForeignKey('PaymentStatus', null=True, on_delete=models.PROTECT, verbose_name='Статус')
-    total_sum = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name='Сумма')
+    total_sum = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name='Общая сумма')
     prepaid_sum = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True,
                                       verbose_name='Сумма аванса')
+    retention_sum = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True,
+                                        verbose_name='Сумма удержаний')
     objects = models.Manager()
 
     def __str__(self):
@@ -80,6 +124,23 @@ class Payment(models.Model):
         verbose_name_plural = 'Платежи'
         verbose_name = 'Платеж'
         ordering = ['date']
+
+    def save(self, *args, **kwargs):
+        orig_obj = Payment.objects.get(pk=self.pk) if self.pk else None
+        save_to_change_log(self, orig_obj,
+                           {'Номер платежа': self.number,
+                            'Дата платежа': self.date,
+                            'Новая сумма': self.total_sum},
+                           None if not orig_obj else {'Старая сумма': str(orig_obj.total_sum)})
+        super(Payment, self).save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        orig_obj = Payment.objects.get(pk=self.pk) if self.pk else None
+        save_delete_to_change_log(orig_obj,
+                                  {'Номер акта': orig_obj.number,
+                                   'Дата акта': orig_obj.date,
+                                   'Сумма': self.total_sum})
+        super(Payment, self).delete(*args, **kwargs)
 
 
 class PrepaidCloseMethod(models.Model):
@@ -138,6 +199,27 @@ class PaymentStatus(models.Model):
         ordering = ['key']
 
 
+class ChangeLog(models.Model):
+    TYPE_ACTION_ON_MODEL = [[i.name, i.value] for i in LogAction]
+
+    changed = models.DateTimeField(auto_now=True, verbose_name='Дата/время изменения')
+    model = models.CharField(max_length=255, verbose_name='Таблица', null=True)
+    user = models.CharField(max_length=255, verbose_name='Автор изменения', null=True)
+    action_on_model = models.CharField(
+      choices=TYPE_ACTION_ON_MODEL, max_length=50, verbose_name='Действие', null=True)
+    data = models.JSONField(verbose_name='Изменяемые данные модели')
+    sent = models.BooleanField(default=False, verbose_name='Отправлено')
+    objects = models.Manager()
+
+    def __str__(self):
+        return f"{self.action_on_model} в [{self.model}] от {self.changed}, автор {self.user}"
+
+    class Meta:
+        verbose_name_plural = 'История изменений'
+        verbose_name = 'Запись об изменении'
+        ordering = ['changed']
+
+
 def num_with_spaces(num) -> str:
     """Возвращает число в виде строки с разрядами, разделенными пробелом и запятой, разделяющей дробную часть"""
     return f"{num:,}".replace(',', ' ').replace('.', ',')
@@ -149,3 +231,43 @@ def int_num_with_spaces(num) -> str:
         return f"{round(num):,}".replace(',', ' ').replace('.', ',')
     else:
         return '0'
+
+
+def save_to_change_log(obj, orig_obj, new_data: dict, update_data: dict):
+    """ Записываем в модель ChangeLog информацию о создании объекта и изменении цены
+
+    Args:
+        obj: новый объект
+        orig_obj: старый объект
+        new_data: информация по новому объекту, словарь
+        update_data: информация по старому обхъекту, словарь
+
+    Returns:
+        нет
+    """
+    if not orig_obj:  # new object
+        current_user = get_current_user()
+        ChangeLog(model=obj._meta.verbose_name_plural, action_on_model=LogAction.create.name,
+                  user=f"{current_user.first_name} {current_user.last_name}",
+                  data={k: str(v) for k, v in new_data.items()}).save()
+    else:
+        if orig_obj.total_sum != obj.total_sum:
+            current_user = get_current_user()
+            ChangeLog(model=obj._meta.verbose_name_plural, action_on_model=LogAction.update.name,
+                      user=f"{current_user.first_name} {current_user.last_name}",
+                      data={k: str(v) for k, v in {**update_data, **new_data}.items()}).save()
+
+
+def save_delete_to_change_log(orig_obj, data: dict):
+    """ Записываем в модель ChangeLog информацию об удалении объекта
+
+    Args:
+        orig_obj: удаляемый объект
+        data: данные для записи, словарь
+
+    Returns: нет
+    """
+    current_user = get_current_user()
+    ChangeLog(model=orig_obj._meta.verbose_name_plural, action_on_model=LogAction.delete.name,
+              user=f"{current_user.first_name} {current_user.last_name}",
+              data={k: str(v) for k, v in data.items()}).save()

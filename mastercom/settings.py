@@ -49,6 +49,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'incoming.middleware.ThreadLocalUserMiddleware'
 ]
 
 ROOT_URLCONF = 'mastercom.urls'
@@ -126,6 +127,7 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 EMAIL_HOST_PASSWORD = 'Madagaskar0'
 SERVER_EMAIL = EMAIL_HOST_USER
 EMAIL_USE_LOCALTIME = True
+
 
 EMAIL_PORT = 2525
 EMAIL_USE_TLS = True
