@@ -15,13 +15,15 @@
         <p><strong>Сумма: <span style="color: green;">{{ obj.total_sum|currency }}</span></strong></p>
         <p><strong>Проект: </strong>{{ obj.project.key }} ({{ obj.project.name }})</p>
         <p><strong>Статус: </strong>{{ obj.status.name }}</p>
-        <p><strong>Процент удержаний: </strong>{{ obj.retention_percent }}%</p>
+        <p><strong>Процент удержаний: </strong>{{ obj.retention_percent|currency }}%</p>
     </div>
     <div class="col">
     <p><strong>Сумма материалов: </strong>{{ obj.material_sum|currency }}</p>
     <p><strong>Сумма работ: </strong>{{ obj.work_sum|currency }}</p>
     <p><strong>Аванс: </strong>{{ obj.prepaid|currency }}</p>
-    <p><strong>Способ закрытия аванса: </strong>{{ obj.prepaid_close_method.name }}</p>
+    <p><strong>Способ закрытия аванса: </strong>{% if obj.prepaid_close_method %} {{ obj.prepaid_close_method.name }}
+                                                {% else %} ???
+                                                {% endif %}</p>
     </div>
     <div class="col">
       <p>{{ obj.description }}</p>

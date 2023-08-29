@@ -3,8 +3,10 @@ import enum
 from django.db.models import Q, Sum, FloatField
 from incoming.models import Contract, Act, Payment
 from typing import List
+from decimal import Decimal
 
-
+DEC0 = Decimal('0.00')
+DEC1 = Decimal('1.00')
 class ActStatusType(enum.Enum):
     """ Типы статусов актов """
     not_defined = None  # Не определен
@@ -50,7 +52,30 @@ def calc_paid_from_acts(total_sum: float, prepaid: float,
 
     if prepaid_type == PrepaidType.not_defined:
         return act_sum - act_sum * (retention_percent / 100)
-        
+
+def calc_paid_from_acts_d(total_sum: Decimal, prepaid: Decimal,
+                        prepaid_type: PrepaidType, retention_percent: Decimal, act_sum: Decimal, ) -> Decimal:
+    """
+    Метод считает размер оплаты с суммы закрытых КС по договору
+
+    Args:
+        ctr: Данные по контракту
+
+    Returns:
+        Размер оплаты, причитающийся с закрытых актов КС
+    """
+    if prepaid_type == PrepaidType.pro_rata:
+        if total_sum == 0:
+            return DEC0
+        else:
+            return (act_sum - act_sum * (prepaid / total_sum + retention_percent / 100)).quantize(DEC1)
+
+    if prepaid_type == PrepaidType.first_ks:
+        return (max(act_sum - act_sum * (retention_percent / 100) - prepaid, DEC0)).quantize(DEC1)
+
+    if prepaid_type == PrepaidType.not_defined:
+        return (act_sum - act_sum * (retention_percent / 100)).quantize(DEC1)
+
 #
 # @dataclass
 # class ContractAnalytic:

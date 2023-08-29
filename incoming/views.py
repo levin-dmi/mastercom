@@ -12,70 +12,57 @@ from .services.calculations import *
 @login_required()
 def index(request):
     objs = {}
-    contracts_for_analytic = Contract.objects.all()
-    for ctr in contracts_for_analytic:
+    for ctr in Contract.objects.all():
         if ctr.project.key not in objs:
             objs[ctr.project.key] = {'name': ctr.project, 'pk': ctr.project.pk, 'contracts': {}, 'sum': {}}
 
-        act_sum = Act.objects.aggregate(sum=Sum('total_sum', output_field=FloatField(), filter=Q(contract__pk=ctr.pk)))[
-            'sum']
-        if not act_sum:
-            act_sum = 0
-        pay_sum = \
-        Payment.objects.aggregate(sum=Sum('total_sum', output_field=FloatField(), filter=Q(contract__pk=ctr.pk)))['sum']
-        if not pay_sum:
-            pay_sum = 0
-        prepaid_pay_sym = \
-        Payment.objects.aggregate(sum=Sum('prepaid_sum', output_field=FloatField(), filter=Q(contract__pk=ctr.pk)))[
-            'sum']
-        if not prepaid_pay_sym:
-            prepaid_pay_sym = 0
-        retention_pay_sym = \
-            Payment.objects.aggregate(sum=Sum('retention_sum', output_field=FloatField(), filter=Q(contract__pk=ctr.pk)))[
-                'sum']
-        if not retention_pay_sym:
-            retention_pay_sym = 0
+        act_sum = Act.objects.aggregate(
+            sum=Sum('total_sum',filter=Q(contract__pk=ctr.pk)))['sum'] or DEC0
+        pay_sum = Payment.objects.aggregate(
+            sum=Sum('total_sum', filter=Q(contract__pk=ctr.pk)))['sum'] or DEC0
+        prepaid_pay_sum = Payment.objects.aggregate(
+            sum=Sum('prepaid_sum', filter=Q(contract__pk=ctr.pk)))['sum'] or DEC0
+        retention_pay_sum = Payment.objects.aggregate(
+            sum=Sum('retention_sum', filter=Q(contract__pk=ctr.pk)))['sum'] or DEC0
 
-        retention_percent = 0 if not ctr.retention_percent else ctr.retention_percent
-        ctr_prepaid = 0 if not ctr.prepaid else ctr.prepaid
 
-        prepaid_type = PrepaidType(ctr.prepaid_close_method.key) if ctr.prepaid_close_method \
-            else PrepaidType.not_defined
+        if ctr.can_calculated():
+            debt_act_sum = (calc_paid_from_acts_d(ctr.total_sum,
+                                               ctr.prepaid,
+                                               PrepaidType(ctr.prepaid_close_method.key),
+                                               ctr.retention_percent,
+                                               act_sum)
+                            - pay_sum - prepaid_pay_sum - retention_pay_sum)
+            debt_prepaid_sum = ctr.prepaid - prepaid_pay_sum
+            retention = (act_sum * ctr.retention_percent / 100 - retention_pay_sum).quantize(DEC1)
+            objs[ctr.project.key]['sum']['debt_act_sum'] = (
+                    objs[ctr.project.key]['sum'].get('debt_act_sum', 0) + debt_act_sum)
+            objs[ctr.project.key]['sum']['debt_prepaid_sum'] = (
+                    objs[ctr.project.key]['sum'].get('debt_prepaid_sum', 0) + debt_prepaid_sum)
+            objs[ctr.project.key]['sum']['retention'] = (
+                    objs[ctr.project.key]['sum'].get('retention', 0) + retention)
+        else:
+            debt_act_sum, debt_prepaid_sum, retention = '?' * 3
 
-        debt_act_sum = calc_paid_from_acts(float(ctr.total_sum), float(ctr_prepaid), prepaid_type,
-                                           float(retention_percent), float(act_sum)) \
-                       - (pay_sum - prepaid_pay_sym - retention_pay_sym)
+        objs[ctr.project.key]['contracts'][ctr.pk] = {'pk': ctr.pk,
+                                                      'num_name': f"{ctr.number} ({ctr.name})",
+                                                      'date': ctr.date,
+                                                      'total_sum': ctr.total_sum,
+                                                      'act_sum': act_sum,
+                                                      'pay_sum': pay_sum,
 
-        ctr_data = {'pk': ctr.pk,
-                    'num_name': f"{ctr.number} ({ctr.name})",
-                    'date': ctr.date,
-                    'total_sum': int_num_with_spaces(ctr.total_sum),
-                    'act_sum': int_num_with_spaces(act_sum),
-                    'pay_sum': int_num_with_spaces(pay_sum),
+                                                      'debt_act_sum': debt_act_sum,
+                                                      'debt_prepaid_sum': debt_prepaid_sum,
+                                                      'retention': retention,
+                                                      }
 
-                    'debt_act_sum': int_num_with_spaces(debt_act_sum),
-                    'debt_prepaid_sum': int_num_with_spaces(float(ctr_prepaid) - prepaid_pay_sym),
-                    'retention': int_num_with_spaces(act_sum * float(retention_percent) / 100 - retention_pay_sym),
-                    }
-        objs[ctr.project.key]['contracts'][ctr.pk] = ctr_data
-
-        objs[ctr.project.key]['sum']['total_sum'] = objs[ctr.project.key]['sum'].get('total_sum', 0) + ctr.total_sum
+        objs[ctr.project.key]['sum']['total_sum'] = (
+                objs[ctr.project.key]['sum'].get('total_sum', 0) + (ctr.total_sum or 0))
         objs[ctr.project.key]['sum']['act_sum'] = objs[ctr.project.key]['sum'].get('act_sum', 0) + act_sum
         objs[ctr.project.key]['sum']['pay_sum'] = objs[ctr.project.key]['sum'].get('pay_sum', 0) + pay_sum
-        objs[ctr.project.key]['sum']['debt_act_sum'] = objs[ctr.project.key]['sum'].get('debt_act_sum',
-                                                                                        0) + debt_act_sum
-        objs[ctr.project.key]['sum']['debt_prepaid_sum'] = objs[ctr.project.key]['sum'].get('debt_prepaid_sum',
-                                                                                            0) + float(
-            ctr_prepaid) - prepaid_pay_sym
-        objs[ctr.project.key]['sum']['retention'] = objs[ctr.project.key]['sum'].get('retention', 0) + act_sum * float(
-            retention_percent) / 100 - retention_pay_sym
+
 
     env = {'analytic_page': True, 'header': 'Аналитика'}
-
-    for prj in objs:
-        for i in objs[prj]['sum']:
-            objs[prj]['sum'][i] = int_num_with_spaces(objs[prj]['sum'][i])
-
     context = {'objs': objs, 'env': env, }
     return render(request, 'analytic.html', context)
 
@@ -125,8 +112,17 @@ class ProjectDeleteView(LoginRequiredMixin, DeleteView):
 @login_required()
 def contracts(request):
     objs = Contract.objects.all()
+    form_initial = {}
+    if request.POST:
+        if request.POST['project']:
+            objs = objs.filter(project=int(request.POST['project']))
+            form_initial['project'] = request.POST['project']
+        if request.POST['contract']:
+            objs = objs.filter(pk=int(request.POST['contract']))
+            form_initial['contract'] = request.POST['contract']
+    form = ListFilterForm(initial=form_initial)
     env = {'contract_page': True, 'header': 'Договоры'}
-    context = {'objs': objs, 'env': env}
+    context = {'objs': objs, 'env': env, 'form': form, }
     return render(request, 'list_view.html', context)
 
 
@@ -224,8 +220,17 @@ class ContractDeleteView(LoginRequiredMixin, DeleteView):
 @login_required()
 def acts(request):
     objs = Act.objects.all()
+    form_initial = {}
+    if request.POST:
+        if request.POST['project']:
+            objs = objs.filter(contract__project=int(request.POST['project']))
+            form_initial['project'] = request.POST['project']
+        if request.POST['contract']:
+            objs = objs.filter(contract=int(request.POST['contract']))
+            form_initial['contract'] = request.POST['contract']
+    form = ListFilterForm(initial=form_initial)
     env = {'act_page': True, 'header': 'Акты'}
-    context = {'objs': objs, 'env': env, }
+    context = {'objs': objs, 'env': env, 'form': form}
     return render(request, 'list_view.html', context)
 
 
@@ -273,8 +278,17 @@ class ActDeleteView(LoginRequiredMixin, DeleteView):
 @login_required()
 def payments(request):
     objs = Payment.objects.all()
-    env = {'payment_page': True, 'header': 'Оплаты'}
-    context = {'objs': objs, 'env': env, }
+    form_initial = {}
+    if request.POST:
+        if request.POST['project']:
+            objs = objs.filter(contract__project=int(request.POST['project']))
+            form_initial['project'] = request.POST['project']
+        if request.POST['contract']:
+            objs = objs.filter(contract=int(request.POST['contract']))
+            form_initial['contract'] = request.POST['contract']
+    form = ListFilterForm(initial=form_initial)
+    env = {'payment_page': True, 'header': 'Оплаты', }
+    context = {'objs': objs, 'env': env, 'form': form, }
     return render(request, 'list_view.html', context)
 
 
@@ -292,6 +306,7 @@ class PaymentCreateView(LoginRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['form'].initial['status'] = PaymentStatus.objects.get(key=PaymentStatusType.paid.value)
         if 'contract_id' in context['view'].kwargs:
             context['form'].initial['contract'] = context['view'].kwargs['contract_id']
         return context

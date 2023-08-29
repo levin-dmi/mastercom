@@ -1,4 +1,5 @@
 {% extends "layout/basic.html" %}
+{% load filters %}
 
 {% block content %}
 {% for prj_name, prj in objs.items %}
@@ -7,20 +8,27 @@
     <div class="card-header d-flex">
         <h5 class="mb-0 me-2">{{ prj.name }}</h5>
         <a href="{% url 'contract_add_to_prj' prj.pk %}" role="button">+ договор</a>
+        <div class="ms-auto">
+        <button class="btn btn-link"
+                style="--bs-btn-padding-y: 0; --bs-btn-padding-x: 0; "
+                type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ prj.pk}}" aria-expanded="false" aria-controls="collapse{{ prj.pk}}">
+                <i class="fa-solid fa-compress"></i>
+         </button>
+        </div>
     </div><!-- /card-header -->
     <!--<h5 class="card-header">{{ prj.name }}</h5>-->
-    <div class="card-body p-0">
+    <div class="card-body p-0 show" id="collapse{{ prj.pk}}">
     <table class="table table-hover text-nowrap table-sm m-0">
         <thead>
             <tr>
                 <th>Договор</th>
                 <th>Дата</th>
-                <th>Сумма</th>
-                <th>Закрыто КС2</th>
-                <th>Оплачено</th>
-                <th>Долг по авансу</th>
-                <th>Долг по КС</th>
-                <th>Удержано</th>
+                <th class="text-end">Сумма</th>
+                <th class="text-end">Закрыто КС2</th>
+                <th class="text-end">Оплачено</th>
+                <th class="text-end">Долг по авансу</th>
+                <th class="text-end">Долг по КС</th>
+                <th class="text-end">Удержано</th>
             </tr>
         </thead>
         <tbody>
@@ -28,24 +36,24 @@
             <tr>
                 <td><a href="{% url 'contract_view' ctr.pk %}">{{ ctr.num_name|truncatechars:25}}</a> </td>
                 <td>{{ ctr.date|date:'d.m.y' }}</td>
-                <td>{{ ctr.total_sum }}</td>
-                <td>{{ ctr.act_sum }}</td>
-                <td>{{ ctr.pay_sum }}</td>
-                <td>{{ ctr.debt_prepaid_sum }}</td>
-                <td>{{ ctr.debt_act_sum }}</td>
-                <td>{{ ctr.retention }}</td>
+                <td class="text-end">{{ ctr.total_sum|currency }}</td>
+                <td class="text-end">{{ ctr.act_sum|currency }}</td>
+                <td class="text-end">{{ ctr.pay_sum|currency }}</td>
+                <td class="text-end">{{ ctr.debt_prepaid_sum|currency }}</td>
+                <td class="text-end">{{ ctr.debt_act_sum|currency }}</td>
+                <td class="text-end">{{ ctr.retention|currency }}</td>
             </tr>
             {% endfor %}
 
             <tr class="table-info">
                 <td>ИТОГО</td>
                 <td></td>
-                <td>{{ prj.sum.total_sum }}</td>
-                <td>{{ prj.sum.act_sum }}</td>
-                <td>{{ prj.sum.pay_sum }}</td>
-                <td>{{ prj.sum.debt_prepaid_sum }}</td>
-                <td>{{ prj.sum.debt_act_sum }}</td>
-                <td>{{ prj.sum.retention }}</td>
+                <td class="text-end">{{ prj.sum.total_sum|currency }}</td>
+                <td class="text-end">{{ prj.sum.act_sum|currency }}</td>
+                <td class="text-end">{{ prj.sum.pay_sum|currency }}</td>
+                <td class="text-end">{{ prj.sum.debt_prepaid_sum|currency }}</td>
+                <td class="text-end">{{ prj.sum.debt_act_sum|currency }}</td>
+                <td class="text-end">{{ prj.sum.retention|currency }}</td>
             </tr>
 
         </tbody>

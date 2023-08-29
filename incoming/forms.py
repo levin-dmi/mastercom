@@ -1,4 +1,4 @@
-from django.forms import ModelForm
+from django.forms import ModelForm, Form, ChoiceField, Select
 from .models import *
 
 
@@ -25,3 +25,10 @@ class PaymentForm(ModelForm):
     class Meta:
         model = Payment
         fields = ('number', 'date', 'contract', 'total_sum', 'prepaid_sum', 'retention_sum', 'status')
+
+class ListFilterForm(Form):
+    projects = [['', 'ВСЕ'],] + [[str(obj.pk), obj] for obj in Project.objects.all()]
+    project = ChoiceField(widget=Select(), choices=projects, required=False)
+    contracts = [['', 'ВСЕ'], ] + [[str(obj.pk), obj] for obj in Contract.objects.all()]
+    contract = ChoiceField(widget=Select(), choices=contracts, required=False)
+

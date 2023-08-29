@@ -1,6 +1,8 @@
 from django.db import models
+from django.db.models import Q, Sum, FloatField
 import enum
 from incoming.middleware import get_current_user
+
 
 
 class LogAction(enum.Enum):
@@ -34,7 +36,7 @@ class Contract(models.Model):
     material_sum = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name='Материалы')
     work_sum = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name='Работы')
     prepaid = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name='Аванс')
-    prepaid_close_method = models.ForeignKey('PrepaidCloseMethod', null=True, on_delete=models.PROTECT,
+    prepaid_close_method = models.ForeignKey('PrepaidCloseMethod', null=True, blank=True, on_delete=models.PROTECT,
                                              verbose_name='Удержание аванса')
     retention_percent = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True,
                                             verbose_name='Процент удержания с КС')
@@ -42,12 +44,19 @@ class Contract(models.Model):
     objects = models.Manager()
 
     def __str__(self):
-        return f"№{self.number} от {self.date} ({self.name}), на сумму {num_with_spaces(self.total_sum)}р."
+        total_sum = num_with_spaces(self.total_sum) if self.total_sum else '???'
+        return f"№{self.number} от {self.date} ({self.name}), на сумму {total_sum}р."
 
     class Meta:
         verbose_name_plural = 'Договоры'
         verbose_name = 'Договор'
         ordering = ['date']
+
+    def can_calculated(self):
+        if None in [self.total_sum, self.material_sum, self.work_sum, self.prepaid,
+                    self.prepaid_close_method, self.retention_percent]:
+            return None
+        return True
 
     def save(self, *args, **kwargs):
         orig_obj = Contract.objects.get(pk=self.pk) if self.pk else None
@@ -223,14 +232,6 @@ class ChangeLog(models.Model):
 def num_with_spaces(num) -> str:
     """Возвращает число в виде строки с разрядами, разделенными пробелом и запятой, разделяющей дробную часть"""
     return f"{num:,}".replace(',', ' ').replace('.', ',')
-
-
-def int_num_with_spaces(num) -> str:
-    """Возвращает число в виде строки с разрядами, разделенными пробелом и без дробной части"""
-    if num:
-        return f"{round(num):,}".replace(',', ' ').replace('.', ',')
-    else:
-        return '0'
 
 
 def save_to_change_log(obj, orig_obj, new_data: dict, update_data: dict):
