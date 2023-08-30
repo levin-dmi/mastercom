@@ -29,7 +29,7 @@ def index(request):
         if ctr.can_calculated():
             debt_act_sum = (calc_paid_from_acts_d(ctr.total_sum,
                                                ctr.prepaid,
-                                               PrepaidType(ctr.prepaid_close_method.key),
+                                               PrepaidType(ctr.prepaid_close_method.key if ctr.prepaid_close_method else -1),
                                                ctr.retention_percent,
                                                act_sum)
                             - pay_sum - prepaid_pay_sum - retention_pay_sum)
@@ -163,11 +163,11 @@ def contract_view(request, contract_id):
     recon = []  # Акт сверки
     for act in Act.objects.filter(contract=contract_id):
         recon.append({'date': act.date, 'doc': f"Акт № {act.number}", 'debet': act.total_sum,
-                      'kredit': None, 'status': act.status,
+                      'kredit': '', 'status': act.status,
                       'status_ok': True if ActStatusType(act.status.key) == ActStatusType.archive else False,
                       'total': False})
     for pay in Payment.objects.filter(contract=contract_id):
-        recon.append({'date': pay.date, 'doc': f"Платеж № {pay.number}", 'debet': None,
+        recon.append({'date': pay.date, 'doc': f"Платеж № {pay.number}", 'debet': '',
                       'kredit': pay.total_sum, 'status': pay.status,
                       'status_ok': True if PaymentStatusType(pay.status.key) == PaymentStatusType.paid else False,
                       'total': False})
@@ -178,8 +178,8 @@ def contract_view(request, contract_id):
                   'debet': total_debet, 'kredit': total_kredit,
                   'status': '', 'status_ok': True, 'total': True})
     recon.append({'date': '', 'doc': "ИТОГО",
-                  'debet': total_debet - total_kredit if total_debet - total_kredit > 0 else None,
-                  'kredit': total_kredit - total_debet if total_debet - total_kredit <= 0 else None,
+                  'debet': total_debet - total_kredit if total_debet - total_kredit > 0 else '',
+                  'kredit': total_kredit - total_debet if total_debet - total_kredit <= 0 else '',
                   'status': '', 'status_ok': True, 'total': True})
 
     env = {'contract_page': True, 'header': f"Договор №{contract.number} от {contract.date}"}
@@ -237,7 +237,31 @@ def acts(request):
 @login_required()
 def act_view(request, act_id):
     act = Act.objects.get(pk=act_id)
-    context = {'act': act, }
+    calc = {'can_calculate': False, 'no_prepaid': False}
+    if act.contract.can_calculated():
+        calc['can_calculate'] = True
+        calc['sum'] = calc_paid_from_acts_d(act.contract.total_sum,
+                                            act.contract.prepaid,
+                                            PrepaidType(
+                                                act.contract.prepaid_close_method.key if act.contract.prepaid_close_method else -1),
+                                            act.contract.retention_percent,
+                                            act.total_sum)
+        calc['acts_sum'] = Act.objects.aggregate(
+            sum=Sum('total_sum', filter=Q(contract__pk=act.contract.pk)))['sum'] or DEC0
+
+        fact_prepaid = Payment.objects.aggregate(
+            sum=Sum('prepaid_sum', filter=Q(contract__pk=act.contract.pk)))['sum'] or DEC0
+        if fact_prepaid < act.contract.prepaid:
+            calc['no_prepaid'] = True
+            calc['sum_corr'] = calc_paid_from_acts_d(act.contract.total_sum,
+                                                fact_prepaid,
+                                                     PrepaidType(
+                                                         act.contract.prepaid_close_method.key if act.contract.prepaid_close_method else -1),
+                                                act.contract.retention_percent,
+                                                act.total_sum)
+            calc['fact_prepaid'] = fact_prepaid
+
+    context = {'act': act, 'calc': calc}
     return render(request, 'acts/act_view.html', context)
 
 

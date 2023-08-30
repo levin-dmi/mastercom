@@ -53,9 +53,10 @@ class Contract(models.Model):
         ordering = ['date']
 
     def can_calculated(self):
-        if None in [self.total_sum, self.material_sum, self.work_sum, self.prepaid,
-                    self.prepaid_close_method, self.retention_percent]:
-            return None
+        prepaid_close_method_ok = True if (self.prepaid_close_method is not None) or (self.prepaid == 0) else False
+        if (None in [self.total_sum, self.material_sum, self.work_sum, self.prepaid,
+                    self.retention_percent]) or not prepaid_close_method_ok:
+            return False
         return True
 
     def save(self, *args, **kwargs):

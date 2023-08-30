@@ -25,10 +25,13 @@ class PaymentStatusType(enum.Enum):
 
 class PrepaidType(enum.Enum):
     """ Типы условий возврата аванса """
-    not_defined = None  # Не определен
+    not_defined = -1  # Не определен
     pro_rata = 0  # Пропорционально закрытым актам КС
     first_ks = 1  # Полностью из первых КС
 
+    @classmethod
+    def _missing_(cls, value):
+        return cls.not_defined
 
 def calc_paid_from_acts(total_sum: float, prepaid: float, 
                         prepaid_type: PrepaidType, retention_percent: float, act_sum: float, ) -> float:
@@ -75,6 +78,9 @@ def calc_paid_from_acts_d(total_sum: Decimal, prepaid: Decimal,
 
     if prepaid_type == PrepaidType.not_defined:
         return (act_sum - act_sum * (retention_percent / 100)).quantize(DEC1)
+
+
+
 
 #
 # @dataclass

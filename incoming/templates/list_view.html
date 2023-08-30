@@ -1,4 +1,5 @@
 {% extends "layout/basic.html" %}
+{% load filters %}
 
 {% block content %}
 {% if env.project_page %}
@@ -32,22 +33,22 @@
                 <th>Дата</th>
                 <th>Название</th>
                 <th>Проект</th>
-                <th>Сумма</th>
-                <th>Статус</th>
+                <th class="text-end">Сумма</th>
+                <th  class="text-center">Статус</th>
             {% elif env.act_page %}
                 <th>Номер</th>
                 <th>Дата</th>
                 <th>Договор</th>
-                <th>Сумма</th>
-                <th>Статус</th>
+                <th class="text-end">Сумма</th>
+                <th  class="text-center">Статус</th>
             {% elif env.payment_page %}
                 <th>Номер платежа</th>
                 <th>Дата</th>
                 <th>Договор</th>
-                <th>Сумма</th>
-                <th>В том числе аванс</th>
-                <th>Возврат удержаний</th>
-                <th>Статус</th>
+                <th class="text-end">Сумма</th>
+                <th class="text-end">В том числе аванс</th>
+                <th class="text-end">Возврат удержаний</th>
+                <th  class="text-center">Статус</th>
             {% endif %}
                 <th></th>
         </tr>
@@ -67,8 +68,8 @@
                 <td>{{ obj.date }}</td>
                 <td>{{ obj.name }}</td>
                 <td>{{ obj.project.key }} ({{ obj.project.name }})</td>
-                <td>{{ obj.total_sum }}</td>
-                <td>{{ obj.status.name }}</td>
+                <td class="text-end">{{ obj.total_sum|currency }}</td>
+                <td class="text-center">{{ obj.status.name }}</td>
                 <td class="text-right">
                     <a href="{% url 'contract_update' obj.pk %}"><i class="fa fa-pencil-square-o"></i></a>&nbsp
                     <a href="{% url 'contract_delete' obj.pk %}" ><i class="fa fa-trash" aria-hidden="true" style="color: red;"></i></a>
@@ -77,8 +78,8 @@
                 <td><a href="{% url 'act_view' obj.pk %}">{{ obj.number }}</a></td>
                 <td>{{ obj.date }}</td>
                 <td>{{ obj.contract.number }}</td>
-                <td>{{ obj.total_sum }}</td>
-                <td>{{ obj.status.name }}</td>
+                <td class="text-end">{{ obj.total_sum|currency }}</td>
+                <td class="text-center">{{ obj.status.name }}</td>
                 <td class="text-right">
                     <a href="{% url 'act_update' obj.pk %}"><i class="fa fa-pencil-square-o"></i></a>&nbsp
                     <a href="{% url 'act_delete' obj.pk %}" ><i class="fa fa-trash" aria-hidden="true" style="color: red;"></i></a>
@@ -87,10 +88,10 @@
                 <td><a href="{% url 'payment_view' obj.pk %}">{{ obj.number }}</a></td>
                 <td>{{ obj.date }}</td>
                 <td>{{ obj.contract.number }}</td>
-                <td>{{ obj.total_sum }}</td>
-                <td>{{ obj.prepaid_sum }}</td>
-                <td>{{ obj.retention_sum }}</td>
-                <td>{{ obj.status.name }}</td>
+                <td class="text-end">{{ obj.total_sum|currency }}</td>
+                <td class="text-end">{{ obj.prepaid_sum|currency }}</td>
+                <td class="text-end">{{ obj.retention_sum|currency }}</td>
+                <td class="text-center">{{ obj.status.name }}</td>
                 <td class="text-right">
                     <a href="{% url 'payment_update' obj.pk %}"><i class="fa fa-pencil-square-o"></i></a>&nbsp
                     <a href="{% url 'payment_delete' obj.pk %}" ><i class="fa fa-trash" aria-hidden="true" style="color: red;"></i></a>

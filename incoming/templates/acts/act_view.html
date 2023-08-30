@@ -1,14 +1,33 @@
 {% extends "layout/basic_acts.html" %}
+{% load filters %}
 
 {% block content %}
-<h3>{{ act.number }}</h3>
+<h3 class="text-primary">Акт № {{ act.number }}</h3>
 <p><strong>Дата: </strong>{{ act.date }}</p>
 <p><strong>Договор: </strong>{{ act.contract.number }}</p>
 <p><strong>Статус: </strong>{{ act.status.name }}</p>
-<p><strong>Сумма: </strong>{{ act.total_sum }}</p>
-<p><strong>Сумма материалов: </strong>{{ act.material_sum }}</p>
-<p><strong>Сумма работ: </strong>{{ act.work_sum }}</p>
+<p><strong>Сумма: </strong>{{ act.total_sum|currency }}</p>
+<p><strong>Сумма материалов: </strong>{{ act.material_sum|currency }}</p>
+<p><strong>Сумма работ: </strong>{{ act.work_sum|currency }}</p>
+<br>
 
+{% if calc.can_calculate %}
+<h4 class="text-success">Cумма счета по условиям договора {{ calc.sum|currency }} &#8381;</h4>
+{% else %}
+<h4 class="text-danger">Для расчета суммы счета заполните данные по договору</h4>
+{% endif %}
+<h5>Исходные данные для расчета:</h5>
+<strong>Сумма договора: </strong>{{ act.contract.total_sum|currency }}<br>
+<strong>Сумма аванса: </strong>{{ act.contract.prepaid|currency }}
+{% if not calc.no_prepaid %} (оплачен) {% endif %}<br>
+<strong>Метод закрытия аванса: </strong>{{ act.contract.prepaid_close_method }}<br>
+<strong>Закрыто КС (включая эту): </strong>{{ calc.acts_sum|currency }}<br>
+<strong>Процент удержаний: </strong>{{ act.contract.retention_percent|currency }}<br>
+<br>
 
+{% if calc.no_prepaid %}
+<h4 class="text-success">Сумма счета с учетом невыплаты клиентом аванса {{ calc.sum_corr|currency }} &#8381;</h4>
+Фактическая выплата аванса по договору составила {{ calc.fact_prepaid|currency }} &#8381; (на сегодня)
+{% endif %}
 {% endblock %}
 
