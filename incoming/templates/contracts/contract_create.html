@@ -1,11 +1,46 @@
 {% extends "layout/basic_contracts.html" %}
 
 {% block content %}
-<form method="post">
+
+<script>
+const calcOtherSum = () => {
+  document.getElementsByClassName('other_sum')[0].textContent = Math.round(100*(document.getElementById("{{ form.total_sum.auto_id }}").value-document.getElementById("{{ form.material_sum.auto_id }}").value-document.getElementById("{{ form.work_sum.auto_id }}").value))/100;
+
+}
+    const moveSum = () => {
+    document.getElementById("{{ form.work_sum.auto_id }}").value = Number(document.getElementById("{{ form.work_sum.auto_id }}").value)+Number(document.getElementsByClassName('other_sum')[0].textContent)
+  document.getElementsByClassName('other_sum')[0].textContent = 0
+
+}
+  </script>
+
+
+<form id="form" method="post">
     {% csrf_token %}
-    {{ form.as_p }}
-    <input type="button" onclick="history.back();" value="Отменить"/>
-    <input type="submit" value="Добавить">
+    Номер: {{ form.number }} <br><br>
+    Дата: {{ form.date }} <br><br>
+    Название: {{ form.name }} <br><br>
+    Описание: {{ form.description }} <br><br>
+    Проект: {{ form.project }} <br><br>
+    <div class="card">
+        <div class="card-header">
+            Сумма договора: {{ form.total_sum }}
+        </div>
+        <div class="card-body">
+            Материалы: {{ form.material_sum }} <br><br>
+            Работы: {{ form.work_sum }} &nbsp;<button type="button" onClick="moveSum();" class="btn btn-primary btn-sm">Взять из прочих</button> <br><br>
+            Прочее: <p class="other_sum" style="display:inline">0.00</p>&nbsp;<button type="button" onClick="calcOtherSum();" class="btn btn-primary btn-sm"><i class="fa-solid fa-repeat"></i></button>
+        </div>
+    </div>
+    <br>
+    Аванс: {{ form.prepaid }} <br><br>
+    Удержание аванса: {{ form.prepaid_close_method }} <br><br>
+    Удержание с КС, %: {{ form.retention_percent }} <br><br>
+    Статус: {{ form.status }} <br><br>
+    <input type="button" onclick="history.back();" value="Отменить" class="btn btn-secondary">
+    <input type="submit" value="Добавить" class="btn btn-success">
 </form>
+
+
 {% endblock %}
 
