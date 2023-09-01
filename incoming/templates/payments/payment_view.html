@@ -2,7 +2,9 @@
 {% load filters %}
 
 {% block content %}
-<h3>{{ pay.number }}</h3>
+<h3 class="text-primary" style="display:inline">Платеж № {{ pay.number }}</h3>
+<a href="{% url 'payment_update' pay.pk %}" role="button" class="me-2" >редактировать</a>
+<a href="{% url 'payment_delete' pay.pk %}" role="button" class="me-2">удалить</a><br><br>
 <p><strong>Дата: </strong>{{ pay.date }}</p>
 <p><strong>Номер: </strong>{{ pay.contract.number }}</p>
 <p><strong>Статус: </strong>{{ pay.status }}</p>

@@ -14,6 +14,7 @@ DATABASES = {
     }
 }
 
-ALLOWED_HOSTS = ['my.mastercom.su']
+ALLOWED_HOSTS = ['my.mastercom.su', 'www.my.mastercom.su']
 
+# пустая папка, сюда будет собирать статику collectstatic
 STATIC_ROOT = '/home/m/mastercom/my/public_html/static/'

@@ -1,7 +1,9 @@
 {% extends "layout/basic_projects.html" %}
 
 {% block content %}
-<h3>{{ prj.key }}</h3>
+<h3 class="text-primary" style="display:inline">Проект № {{ prj.key }}</h3>
+<a href="{% url 'project_update' prj.pk %}" role="button" class="me-2" >редактировать</a>
+<a href="{% url 'project_delete' prj.pk %}" role="button" class="me-2">удалить</a><br><br>
 <p><strong>Название проекта: </strong>{{ prj.name }}</p>
 <p><strong>Описание: </strong>{{ prj.description }}</p>
 {% endblock %}

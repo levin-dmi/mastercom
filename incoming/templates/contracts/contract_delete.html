@@ -1,6 +1,26 @@
 {% extends "layout/basic_contracts.html" %}
 
 {% block content %}
+{% if undeleted_acts or undeleted_payments %}
+<h1>Прежде чем удалить договор {{ object }}, вы должны удалить следующие документы:</h1>
+{% if undeleted_acts %}
+    <h3>Акты:</h3>
+    <ul>
+        {% for act in undeleted_acts %}
+        <li><a href="{% url 'act_view' act.pk %}">{{ act }}</a></li>
+        {% endfor %}
+    </ul>
+{% endif %}
+{% if undeleted_payments %}
+    <h3>Платежи:</h3>
+    <ul>
+        {% for payment in undeleted_payments %}
+        <li><a href="{% url 'payment_view' payment.pk %}">{{ payment }}</a></li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+{% else %}
 <h1>Удаление договора</h1>
 <form method="post">
     {% csrf_token %}
@@ -8,5 +28,6 @@
     <input type="button" onclick="history.back();" value="Отменить"/>
     <input type="submit" value="Подтвердить">
 </form>
+{% endif %}
 {% endblock %}
 

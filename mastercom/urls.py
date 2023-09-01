@@ -17,6 +17,8 @@ from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth.views import LoginView, LogoutView
 from incoming.views import redirect_to_incoming
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from django.conf import settings
 
 urlpatterns = [
     path('', redirect_to_incoming),
@@ -25,3 +27,6 @@ urlpatterns = [
     path('accounts/login/', LoginView.as_view(), name='login'),
     path('accounts/logout/', LogoutView.as_view(next_page='login'), name='logout'),
 ]
+
+# if settings.DEBUG:
+#     urlpatterns += staticfiles_urlpatterns()

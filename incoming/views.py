@@ -108,6 +108,11 @@ class ProjectDeleteView(LoginRequiredMixin, DeleteView):
     template_name = 'projects/project_delete.html'
     success_url = reverse_lazy('projects')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['undeleted_contracts'] = Contract.objects.filter(project=context['object'])
+        return context
+
 
 @login_required()
 def contracts(request):
@@ -216,6 +221,13 @@ class ContractDeleteView(LoginRequiredMixin, DeleteView):
     template_name = 'contracts/contract_delete.html'
     success_url = reverse_lazy('contracts')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        undeleted_acts = Act.objects.filter(contract=context['object'])
+        undeleted_payments = Payment.objects.filter(contract=context['object'])
+        context['undeleted_acts'] = undeleted_acts
+        context['undeleted_payments'] = undeleted_payments
+        return context
 
 @login_required()
 def acts(request):
@@ -276,6 +288,9 @@ class ActCreateView(LoginRequiredMixin, CreateView):
             context['form'].initial['contract'] = context['view'].kwargs['contract_id']
         return context
 
+    def get_success_url(self):
+        act_id = self.object.id
+        return reverse_lazy('act_view', kwargs={'act_id': act_id})
 
 class ActUpdateView(LoginRequiredMixin, UpdateView):
     model = Act

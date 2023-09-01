@@ -4,7 +4,7 @@
 {% block content %}
 {% if env.project_page %}
 {% else %}
-<form method="POST" class="post-form pb-3">{% csrf_token %}
+<form method="POST" class="post-form pb-3 overflow-x-scroll">{% csrf_token %}
         Проект: {{ form.project }} &nbsp;&nbsp;
         Договор: {{ form.contract }} &nbsp;&nbsp;
         <button type="submit" class="save btn btn-primary btn-sm"
@@ -12,7 +12,7 @@
     </form>
 {% endif %}
 
-<div class="card p-0">
+<div class="card p-0 overflow-auto" >
     <div class="card-header">
         <a href="{% if env.project_page %} {% url 'project_add' %}
                  {% elif env.contract_page %} {% url 'contract_add' %}
@@ -104,5 +104,6 @@
     </table>
     </div> <!-- /card-body -->
 </div><!-- /card -->
+
 {% endblock %}
 

@@ -2,10 +2,11 @@
 {% load filters %}
 
 {% block content %}
-<div class="card border-secondary mb-4">
+<div class="card border-secondary mb-4 overflow-auto">
     <div class="card-header d-flex">
         <h5 class="mb-0 me-2">{{ obj.name }}</h5>
         <a href="{% url 'contract_update' obj.pk %}" role="button" class="me-2">редактировать</a>
+        <a href="{% url 'contract_delete' obj.pk %}" role="button" class="me-2">удалить</a>
         <a href="{% url 'act_add_to_ctr' obj.pk %}" role="button" class="me-2">+ акт</a>
         <a href="{% url 'payment_add_to_ctr' obj.pk %}" role="button">+ платеж</a>
     </div><!-- /card-header -->
@@ -33,7 +34,7 @@
 
 <div class = "row">
     <div class = "col">
-    <div class="card border-secondary mb-4">
+    <div class="card border-secondary mb-4 overflow-auto">
         <h5 class="card-header">Баланс договора</h5>
         <div class="card-body p-0">
         <table class="table table-hover text-nowrap table-sm m-0">
@@ -68,7 +69,7 @@
     </div>
 
     <div class = "col">
-    <div class="card border-secondary mb-4">
+    <div class="card border-secondary mb-4 overflow-auto">
         <h5 class="card-header">ДДС</h5>
         <div class="card-body p-0">
         <table class="table table-hover text-nowrap table-sm m-0">
@@ -113,7 +114,7 @@
     </div>
 
     <div class = "col">
-    <div class="card border-secondary mb-4">
+    <div class="card border-secondary mb-4 overflow-auto">
         <h5 class="card-header">Выработка</h5>
         <div class="card-body p-0">
         <table class="table table-hover text-nowrap table-sm m-0">
@@ -161,7 +162,7 @@
 </div>
 
 
-<div class="card border-secondary mb-4">
+<div class="card border-secondary mb-4 overflow-auto">
     <h5 class="card-header">Сверка по договору</h5>
     <div class="card-body p-0">
     <table class="table table-hover text-nowrap table-sm m-0">

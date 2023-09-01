@@ -1,6 +1,15 @@
 {% extends "layout/basic_projects.html" %}
 
 {% block content %}
+{% if undeleted_contracts %}
+<h1>Прежде чем удалить проект {{ object }}, вы должны удалить следующие договора:</h1>
+    <ul>
+        {% for contract in undeleted_contracts %}
+        <li><a href="{% url 'contract_view' contract.pk %}">{{ contract }}</a></li>
+        {% endfor %}
+    </ul>
+
+{% else %}
 <h1>Удаление проекта</h1>
 <form method="post">
     {% csrf_token %}
@@ -8,5 +17,6 @@
     <input type="button" onclick="history.back();" value="Отменить"/>
     <input type="submit" value="Подтвердить">
 </form>
+{% endif %}
 {% endblock %}
 

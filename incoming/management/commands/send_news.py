@@ -5,6 +5,7 @@ from incoming.models import *
 from django.utils import timezone
 from django.template.loader import render_to_string
 from ...services.calculations import *
+from datetime import datetime, timedelta
 
 class Command(BaseCommand):
     """
@@ -82,3 +83,5 @@ class Command(BaseCommand):
                 for change_obj in ChangeLog.objects.filter(sent=False):
                     change_obj.sent = True
                     change_obj.save()
+
+        ChangeLog.objects.filter(changed__lt=datetime.now()-timedelta(weeks=8), sent=True).delete()
