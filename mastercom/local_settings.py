@@ -24,5 +24,4 @@ DATABASES = {
 }
 
 ALLOWED_HOSTS = ['127.0.0.1']
-STATICFILES_DIRS = [Path(__file__).resolve().parent.parent / 'assets']
-pass
+

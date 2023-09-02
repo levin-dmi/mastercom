@@ -3,11 +3,12 @@
 - Убедиться что есть резервная копия
 - Заменить файлы на хостинге новыми
 - Удалить mastercom/local_settings.py
-- Скопировать файлы из incoming/static в каталог static в корне сайта
 - Запустить ssh консоль и venv: 'source /home/m/mastercom/my/public_html/venv/bin/activate'
+- Перейти в каталог 'cd /home/m/mastercom/my/public_html/mastercom'
 - Установить недостающие пакеты 'pip install'
-- Запустить миграции 'cd /home/m/mastercom/my/public_html/mastercom'
-- 'python manage.py migrate'
+- Запустить 'python manage.py collectstatic'
+- (тут не понятно, вроде должен файлы из assets или cкопировать в static или видеть а сам не то не другое. копировал вручную.)
+- Запустить миграции 'python manage.py migrate'
 - Проверить результат и включить пользователей
 
 ## Настройка рассылок
