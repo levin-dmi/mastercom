@@ -29,7 +29,8 @@ class Command(BaseCommand):
             Последние изменения в данных учета исполнения договоров:\n\n"""
         changes = []
         for change_obj in ChangeLog.objects.filter(sent=False):
-            change = f"\n{change_obj.user} [{change_obj.changed.astimezone(tz).strftime('%d.%m.%y %H:%M')}]: {LogAction[change_obj.action_on_model].value} в таблице {change_obj.model}\n\t\t"
+            change = (f"\n{change_obj.user} [{change_obj.changed.astimezone(tz).strftime('%d.%m.%y %H:%M')}]: "
+                      f"{ChangeLog.LogAction(change_obj.action_on_model).label} в таблице {change_obj.model}\n\t\t")
             email_text += change
             for detail_name, detail in change_obj.data.items():
                 change += f"{detail_name}: {detail}\t"
@@ -84,4 +85,4 @@ class Command(BaseCommand):
                     change_obj.sent = True
                     change_obj.save()
 
-        ChangeLog.objects.filter(changed__lt=datetime.now()-timedelta(weeks=8), sent=True).delete()
+        ChangeLog.objects.filter(changed__lt=timezone.now()-timedelta(weeks=8), sent=True).delete()

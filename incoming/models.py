@@ -1,17 +1,25 @@
 from django.db import models
-from django.db.models import Q, Sum, FloatField
-import enum
+
 from incoming.middleware import get_current_user
 
 
+class Partner(models.Model):
+    """Контрагент"""
+    inn = models.CharField(max_length=12, db_index=True, verbose_name='ИНН')
+    name = models.CharField(max_length=100, null=True, blank=True, verbose_name='Название')
+    objects = models.Manager()
 
-class LogAction(enum.Enum):
-    create = 'Новая запись'
-    update = 'Изменение в записи'
-    delete = 'Удаление записи'
+    def __str__(self):
+        return f"{self.name}"
+
+    class Meta:
+        verbose_name_plural = 'Контрагенты'
+        verbose_name = 'Контрагент'
+        ordering = ['name']
 
 
 class Project(models.Model):
+    """Проект"""
     key = models.CharField(max_length=32, db_index=True, verbose_name='Код')  # МК2203
     name = models.CharField(max_length=32, null=True, blank=True, verbose_name='Название')  # Клин
     description = models.TextField(null=True, blank=True, verbose_name='Описание')
@@ -27,11 +35,23 @@ class Project(models.Model):
 
 
 class Contract(models.Model):
+    """Договор"""
+    class PartnerType(models.TextChoices):
+        CUSTOMER = 'customer', 'Клиент'
+        CONTRACTOR = 'contractor', 'Подрядчик'
+
+
     number = models.CharField(max_length=16, db_index=True, null=True, blank=True, verbose_name='Номер')
     date = models.DateField(null=True, blank=True, verbose_name='Дата')
     name = models.CharField(max_length=32, null=True, blank=True, verbose_name='Название')
     description = models.TextField(null=True, blank=True, verbose_name='Описание')
+    status = models.ForeignKey('ContractStatus', null=True, on_delete=models.PROTECT, verbose_name='Статус')
+
     project = models.ForeignKey('Project', null=True, on_delete=models.PROTECT, verbose_name='Проект')
+    # partner = models.ForeignKey('Partner', null=True, on_delete=models.PROTECT, verbose_name='Контрагент')
+    # partner_type = models.CharField(
+    #     choices=PartnerType.choices, max_length=20, default=PartnerType.CUSTOMER, verbose_name='Тип контрагента')
+
     total_sum = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name='Сумма')
     material_sum = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name='Материалы')
     work_sum = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name='Работы')
@@ -40,7 +60,7 @@ class Contract(models.Model):
                                              verbose_name='Удержание аванса')
     retention_percent = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True,
                                             verbose_name='Процент удержания с КС')
-    status = models.ForeignKey('ContractStatus', null=True, on_delete=models.PROTECT, verbose_name='Статус')
+
     objects = models.Manager()
 
     def __str__(self):
@@ -210,13 +230,18 @@ class PaymentStatus(models.Model):
 
 
 class ChangeLog(models.Model):
-    TYPE_ACTION_ON_MODEL = [[i.name, i.value] for i in LogAction]
+    class LogAction(models.TextChoices):
+        CREATE = 'create', 'Новая запись'
+        UPDATE = 'update', 'Изменение в записи'
+        DELETE = 'delete', 'Удаление записи'
+
+    # TYPE_ACTION_ON_MODEL = [[i.name, i.value] for i in LogAction]
 
     changed = models.DateTimeField(auto_now=True, verbose_name='Дата/время изменения')
     model = models.CharField(max_length=255, verbose_name='Таблица', null=True)
     user = models.CharField(max_length=255, verbose_name='Автор изменения', null=True)
     action_on_model = models.CharField(
-      choices=TYPE_ACTION_ON_MODEL, max_length=50, verbose_name='Действие', null=True)
+      choices=LogAction.choices, max_length=50, verbose_name='Действие', null=True)
     data = models.JSONField(verbose_name='Изменяемые данные модели')
     sent = models.BooleanField(default=False, verbose_name='Отправлено')
     objects = models.Manager()
@@ -249,13 +274,13 @@ def save_to_change_log(obj, orig_obj, new_data: dict, update_data: dict):
     """
     if not orig_obj:  # new object
         current_user = get_current_user()
-        ChangeLog(model=obj._meta.verbose_name_plural, action_on_model=LogAction.create.name,
+        ChangeLog(model=obj._meta.verbose_name_plural, action_on_model= ChangeLog.LogAction.CREATE,
                   user=f"{current_user.first_name} {current_user.last_name}",
                   data={k: str(v) for k, v in new_data.items()}).save()
     else:
         if orig_obj.total_sum != obj.total_sum:
             current_user = get_current_user()
-            ChangeLog(model=obj._meta.verbose_name_plural, action_on_model=LogAction.update.name,
+            ChangeLog(model=obj._meta.verbose_name_plural, action_on_model=ChangeLog.LogAction.UPDATE,
                       user=f"{current_user.first_name} {current_user.last_name}",
                       data={k: str(v) for k, v in {**update_data, **new_data}.items()}).save()
 
@@ -270,6 +295,6 @@ def save_delete_to_change_log(orig_obj, data: dict):
     Returns: нет
     """
     current_user = get_current_user()
-    ChangeLog(model=orig_obj._meta.verbose_name_plural, action_on_model=LogAction.delete.name,
+    ChangeLog(model=orig_obj._meta.verbose_name_plural, action_on_model=ChangeLog.LogAction.DELETE,
               user=f"{current_user.first_name} {current_user.last_name}",
               data={k: str(v) for k, v in data.items()}).save()

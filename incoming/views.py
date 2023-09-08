@@ -32,7 +32,7 @@ def index(request):
                                                PrepaidType(ctr.prepaid_close_method.key if ctr.prepaid_close_method else -1),
                                                ctr.retention_percent,
                                                act_sum)
-                            - pay_sum - prepaid_pay_sum - retention_pay_sum)
+                            - (pay_sum - prepaid_pay_sum - retention_pay_sum))
             debt_prepaid_sum = ctr.prepaid - prepaid_pay_sum
             retention = (act_sum * ctr.retention_percent / 100 - retention_pay_sum).quantize(DEC1)
             objs[ctr.project.key]['sum']['debt_act_sum'] = (
