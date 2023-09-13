@@ -29,5 +29,4 @@ urlpatterns = [
     path('payments/update/<int:pk>/', PaymentUpdateView.as_view(), name='payment_update'),
     path('payments/delete/<int:pk>/', PaymentDeleteView.as_view(), name='payment_delete'),
 
-
 ]

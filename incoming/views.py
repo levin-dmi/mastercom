@@ -7,12 +7,12 @@ from django.db.models import Q, Sum, FloatField
 from .models import *
 from .forms import *
 from .services.calculations import *
-
+from incoming.mixins import LogCreateMixin, LogUpdateMixin, LogDeleteMixin
 
 @login_required()
 def index(request):
     objs = {}
-    for ctr in Contract.objects.all():
+    for ctr in Contract.objects.filter(contract_type=Contract.ContractType.SALE):
         if ctr.project.key not in objs:
             objs[ctr.project.key] = {'name': ctr.project, 'pk': ctr.project.pk, 'contracts': {}, 'sum': {}}
 
@@ -116,7 +116,7 @@ class ProjectDeleteView(LoginRequiredMixin, DeleteView):
 
 @login_required()
 def contracts(request):
-    objs = Contract.objects.all()
+    objs = Contract.objects.filter(contract_type=Contract.ContractType.SALE)
     form_initial = {}
     if request.POST:
         if request.POST['project']:
@@ -193,33 +193,38 @@ def contract_view(request, contract_id):
     return render(request, 'contracts/contract_view.html', context)
 
 
-class ContractCreateView(LoginRequiredMixin, CreateView):
+class ContractCreateView(LoginRequiredMixin, LogCreateMixin, CreateView):
     template_name = 'contracts/contract_create.html'
     form_class = ContractForm
     success_url = reverse_lazy('contracts')
+    log_data = ['number', 'date', 'total_sum']
+
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['form'].initial['contract_type'] = Contract.ContractType.SALE
         if 'project_id' in context['view'].kwargs:
             context['form'].initial['project'] = context['view'].kwargs['project_id']
         return context
 
 
-class ContractUpdateView(LoginRequiredMixin, UpdateView):
+class ContractUpdateView(LoginRequiredMixin, LogUpdateMixin, UpdateView):
     model = Contract
     template_name = 'contracts/contract_update.html'
     form_class = ContractForm
     success_url = reverse_lazy('contracts')
+    log_data = ['number', 'date', 'total_sum'], ['total_sum']
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         return context
 
 
-class ContractDeleteView(LoginRequiredMixin, DeleteView):
+class ContractDeleteView(LoginRequiredMixin, LogDeleteMixin, DeleteView):
     model = Contract
     template_name = 'contracts/contract_delete.html'
     success_url = reverse_lazy('contracts')
+    log_data = ['number', 'date', 'total_sum']
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -231,7 +236,7 @@ class ContractDeleteView(LoginRequiredMixin, DeleteView):
 
 @login_required()
 def acts(request):
-    objs = Act.objects.all()
+    objs = Act.objects.filter(contract__contract_type=Contract.ContractType.SALE)
     form_initial = {}
     if request.POST:
         if request.POST['project']:
@@ -277,10 +282,11 @@ def act_view(request, act_id):
     return render(request, 'acts/act_view.html', context)
 
 
-class ActCreateView(LoginRequiredMixin, CreateView):
+class ActCreateView(LoginRequiredMixin, LogCreateMixin, CreateView):
     template_name = 'acts/act_create.html'
     form_class = ActForm
     success_url = reverse_lazy('acts')
+    log_data = ['number', 'date', 'total_sum']
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -292,22 +298,24 @@ class ActCreateView(LoginRequiredMixin, CreateView):
         act_id = self.object.id
         return reverse_lazy('act_view', kwargs={'act_id': act_id})
 
-class ActUpdateView(LoginRequiredMixin, UpdateView):
+class ActUpdateView(LoginRequiredMixin, LogUpdateMixin, UpdateView):
     model = Act
     template_name = 'acts/act_update.html'
     form_class = ActForm
     success_url = reverse_lazy('acts')
+    log_data = ['number', 'date', 'total_sum'], ['total_sum']
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         return context
 
 
-class ActDeleteView(LoginRequiredMixin, DeleteView):
+class ActDeleteView(LoginRequiredMixin, LogDeleteMixin, DeleteView):
     model = Act
     template_name = 'acts/act_delete.html'
     # form_class = ActForm
     success_url = reverse_lazy('acts')
+    log_data = ['number', 'date', 'total_sum']
 
     # def get_context_data(self, **kwargs):
     #     context = super().get_context_data(**kwargs)
@@ -316,7 +324,7 @@ class ActDeleteView(LoginRequiredMixin, DeleteView):
 
 @login_required()
 def payments(request):
-    objs = Payment.objects.all()
+    objs = Payment.objects.filter(contract__contract_type=Contract.ContractType.SALE)
     form_initial = {}
     if request.POST:
         if request.POST['project']:
@@ -338,10 +346,11 @@ def payment_view(request, payment_id):
     return render(request, 'payments/payment_view.html', context)
 
 
-class PaymentCreateView(LoginRequiredMixin, CreateView):
+class PaymentCreateView(LoginRequiredMixin, LogCreateMixin, CreateView):
     template_name = 'payments/payment_create.html'
     form_class = PaymentForm
     success_url = reverse_lazy('payments')
+    log_data = ['number', 'date', 'total_sum']
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -351,22 +360,23 @@ class PaymentCreateView(LoginRequiredMixin, CreateView):
         return context
 
 
-class PaymentUpdateView(LoginRequiredMixin, UpdateView):
+class PaymentUpdateView(LoginRequiredMixin, LogUpdateMixin, UpdateView):
     model = Payment
     template_name = 'payments/payment_update.html'
     form_class = PaymentForm
     success_url = reverse_lazy('payments')
+    log_data = ['number', 'date', 'total_sum'], ['total_sum']
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         return context
 
 
-class PaymentDeleteView(LoginRequiredMixin, DeleteView):
+class PaymentDeleteView(LoginRequiredMixin, LogDeleteMixin, DeleteView):
     model = Payment
     template_name = 'payments/payment_delete.html'
     success_url = reverse_lazy('payments')
-
+    log_data = ['number', 'date', 'total_sum']
 
 def redirect_to_incoming(request):
     response = redirect('/incoming/')
