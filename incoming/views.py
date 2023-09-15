@@ -62,7 +62,7 @@ def index(request):
         objs[ctr.project.key]['sum']['pay_sum'] = objs[ctr.project.key]['sum'].get('pay_sum', 0) + pay_sum
 
 
-    env = {'analytic_page': True, 'header': 'Аналитика'}
+    env = {'incoming_section': True, 'incoming_section': True, 'analytic_page': True, 'header': 'Аналитика'}
     context = {'objs': objs, 'env': env, }
     return render(request, 'analytic.html', context)
 
@@ -70,7 +70,7 @@ def index(request):
 @login_required()
 def projects(request):
     objs = Project.objects.all()
-    env = {'project_page': True, 'header': 'Проекты'}
+    env = {'incoming_section': True, 'project_page': True, 'header': 'Проекты'}
     context = {'objs': objs, 'env': env, }
     return render(request, 'list_view.html', context)
 
@@ -78,7 +78,8 @@ def projects(request):
 @login_required()
 def project_view(request, project_id):
     prj = Project.objects.get(pk=project_id)
-    context = {'prj': prj, }
+    env = {'incoming_section': True, 'project_page': True}
+    context = {'env': env, 'prj': prj, }
     return render(request, 'projects/project_view.html', context)
 
 
@@ -89,6 +90,7 @@ class ProjectCreateView(LoginRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['env'] = {'incoming_section': True, 'project_page': True}
         return context
 
 
@@ -100,6 +102,7 @@ class ProjectUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['env'] = {'incoming_section': True, 'project_page': True}
         return context
 
 
@@ -110,6 +113,7 @@ class ProjectDeleteView(LoginRequiredMixin, DeleteView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['env'] = {'incoming_section': True, 'project_page': True}
         context['undeleted_contracts'] = Contract.objects.filter(project=context['object'])
         return context
 
@@ -126,7 +130,7 @@ def contracts(request):
             objs = objs.filter(pk=int(request.POST['contract']))
             form_initial['contract'] = request.POST['contract']
     form = ListFilterForm(initial=form_initial)
-    env = {'contract_page': True, 'header': 'Договоры'}
+    env = {'incoming_section': True, 'contract_page': True, 'header': 'Договоры'}
     context = {'objs': objs, 'env': env, 'form': form, }
     return render(request, 'list_view.html', context)
 
@@ -187,7 +191,7 @@ def contract_view(request, contract_id):
                   'kredit': total_kredit - total_debet if total_debet - total_kredit <= 0 else '',
                   'status': '', 'status_ok': True, 'total': True})
 
-    env = {'contract_page': True, 'header': f"Договор №{contract.number} от {contract.date}"}
+    env = {'incoming_section': True, 'contract_page': True, 'header': f"Договор №{contract.number} от {contract.date}"}
     context = {'obj': contract, 'env': env, 'balance': balance, 'cashflow': cashflow,
                'working': working, 'recon': recon}
     return render(request, 'contracts/contract_view.html', context)
@@ -203,6 +207,7 @@ class ContractCreateView(LoginRequiredMixin, LogCreateMixin, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['form'].initial['contract_type'] = Contract.ContractType.SALE
+        context['env'] = {'incoming_section': True, 'contract_page': True}
         if 'project_id' in context['view'].kwargs:
             context['form'].initial['project'] = context['view'].kwargs['project_id']
         return context
@@ -217,6 +222,7 @@ class ContractUpdateView(LoginRequiredMixin, LogUpdateMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['env'] = {'incoming_section': True, 'contract_page': True}
         return context
 
 
@@ -232,6 +238,7 @@ class ContractDeleteView(LoginRequiredMixin, LogDeleteMixin, DeleteView):
         undeleted_payments = Payment.objects.filter(contract=context['object'])
         context['undeleted_acts'] = undeleted_acts
         context['undeleted_payments'] = undeleted_payments
+        context['env'] = {'incoming_section': True, 'contract_page': True}
         return context
 
 @login_required()
@@ -246,7 +253,7 @@ def acts(request):
             objs = objs.filter(contract=int(request.POST['contract']))
             form_initial['contract'] = request.POST['contract']
     form = ListFilterForm(initial=form_initial)
-    env = {'act_page': True, 'header': 'Акты'}
+    env = {'incoming_section': True, 'act_page': True, 'header': 'Акты'}
     context = {'objs': objs, 'env': env, 'form': form}
     return render(request, 'list_view.html', context)
 
@@ -277,8 +284,8 @@ def act_view(request, act_id):
                                                 act.contract.retention_percent,
                                                 act.total_sum)
             calc['fact_prepaid'] = fact_prepaid
-
-    context = {'act': act, 'calc': calc}
+    env = {'incoming_section': True, 'act_page': True}
+    context = {'env': env, 'act': act, 'calc': calc}
     return render(request, 'acts/act_view.html', context)
 
 
@@ -290,8 +297,10 @@ class ActCreateView(LoginRequiredMixin, LogCreateMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['env'] = {'incoming_section': True, 'act_page': True}
         if 'contract_id' in context['view'].kwargs:
             context['form'].initial['contract'] = context['view'].kwargs['contract_id']
+
         return context
 
     def get_success_url(self):
@@ -307,6 +316,7 @@ class ActUpdateView(LoginRequiredMixin, LogUpdateMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['env'] = {'incoming_section': True, 'act_page': True}
         return context
 
 
@@ -317,9 +327,10 @@ class ActDeleteView(LoginRequiredMixin, LogDeleteMixin, DeleteView):
     success_url = reverse_lazy('acts')
     log_data = ['number', 'date', 'total_sum']
 
-    # def get_context_data(self, **kwargs):
-    #     context = super().get_context_data(**kwargs)
-    #     return context
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['env'] = {'incoming_section': True, 'act_page': True}
+        return context
 
 
 @login_required()
@@ -334,7 +345,7 @@ def payments(request):
             objs = objs.filter(contract=int(request.POST['contract']))
             form_initial['contract'] = request.POST['contract']
     form = ListFilterForm(initial=form_initial)
-    env = {'payment_page': True, 'header': 'Оплаты', }
+    env = {'incoming_section': True, 'payment_page': True, 'header': 'Оплаты', }
     context = {'objs': objs, 'env': env, 'form': form, }
     return render(request, 'list_view.html', context)
 
@@ -342,7 +353,8 @@ def payments(request):
 @login_required()
 def payment_view(request, payment_id):
     pay = Payment.objects.get(pk=payment_id)
-    context = {'pay': pay, }
+    env = {'incoming_section': True, 'payment_page': True}
+    context = {'env': env, 'pay': pay, }
     return render(request, 'payments/payment_view.html', context)
 
 
@@ -355,6 +367,7 @@ class PaymentCreateView(LoginRequiredMixin, LogCreateMixin, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['form'].initial['status'] = PaymentStatus.objects.get(key=PaymentStatusType.paid.value)
+        context['env'] = {'incoming_section': True, 'payment_page': True}
         if 'contract_id' in context['view'].kwargs:
             context['form'].initial['contract'] = context['view'].kwargs['contract_id']
         return context
@@ -369,6 +382,7 @@ class PaymentUpdateView(LoginRequiredMixin, LogUpdateMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['env'] = {'incoming_section': True, 'payment_page': True}
         return context
 
 
@@ -377,6 +391,11 @@ class PaymentDeleteView(LoginRequiredMixin, LogDeleteMixin, DeleteView):
     template_name = 'payments/payment_delete.html'
     success_url = reverse_lazy('payments')
     log_data = ['number', 'date', 'total_sum']
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['env'] = {'incoming_section': True, 'payment_page': True}
+        return context
 
 def redirect_to_incoming(request):
     response = redirect('/incoming/')
