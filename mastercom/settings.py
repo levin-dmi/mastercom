@@ -135,3 +135,8 @@ EMAIL_USE_SSL = False
 
 ADMINS = (('ME', 'levin.dmi@gmail.com'), )
 MANAGERS = ADMINS
+
+INTERNAL_IPS = (
+    '127.0.0.1',
+
+)

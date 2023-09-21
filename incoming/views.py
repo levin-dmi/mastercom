@@ -1,7 +1,9 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.views.generic.list import ListView
 from django.urls import reverse_lazy
 from django.db.models import Q, Sum, FloatField
 from .models import *
@@ -396,6 +398,74 @@ class PaymentDeleteView(LoginRequiredMixin, LogDeleteMixin, DeleteView):
         context = super().get_context_data(**kwargs)
         context['env'] = {'incoming_section': True, 'payment_page': True}
         return context
+
+
+class PartnerDetailView(LoginRequiredMixin, DetailView):
+    model = Partner
+    template_name = 'partners/partner_view.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['env'] = {'contractor_section': True, 'partner_page': True, 'header': context['object']}
+        return context
+
+
+class PartnersView(LoginRequiredMixin, ListView):
+    template_name = 'list_view2.html'
+    context_object_name = 'objs'
+
+    def get_queryset(self):
+        return Partner.objects.all()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['env'] = {'contractor_section': True,
+                          'partner_page': True,
+                          'header': 'Партнеры',
+                          'create_url': 'partner_add',
+                          'update_url': 'partner_update',
+                          'delete_url': 'partner_delete',
+                          'table_headers': ['ИНН', 'Наименование'],
+                          'columns': [{'name': 'inn', 'url': 'partner_view'},
+                                      {'name': 'name'}],
+                          }
+        return context
+
+
+class PartnerCreateView(LoginRequiredMixin, CreateView):
+    template_name = 'create.html'
+    form_class = PartnerForm
+    success_url = reverse_lazy('partners')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['env'] = {'contractor_section': True, 'partner_page': True, 'header': 'Новый партнер'}
+        return context
+
+
+class PartnerUpdateView(LoginRequiredMixin, UpdateView):
+    model = Partner
+    template_name = 'create.html'
+    form_class = PartnerForm
+    success_url = reverse_lazy('partners')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['env'] = {'contractor_section': True, 'partner_page': True, 'header': 'Обновить данные партнера'}
+        return context
+
+
+class PartnerDeleteView(LoginRequiredMixin, DeleteView):
+    model = Partner
+    template_name = 'partners/partner_delete.html'
+    success_url = reverse_lazy('partners')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['env'] = {'contractor_section': True, 'partner_page': True, 'header': 'Удалить партнера'}
+        context['undeleted_contracts'] = Contract.objects.filter(partner=context['object'])
+        return context
+
 
 def redirect_to_incoming(request):
     response = redirect('/incoming/')

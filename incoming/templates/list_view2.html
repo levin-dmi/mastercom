@@ -1,0 +1,54 @@
+{% extends "layout/basic.html" %}
+{% load filters %}
+
+{% block content %}
+
+{% if filter_form %}
+<form method="POST" class="post-form pb-3 overflow-x-scroll">{% csrf_token %}
+        Проект: {{ filter_form.project }} &nbsp;&nbsp;
+        Договор: {{ filter_form.contract }} &nbsp;&nbsp;
+        <button type="submit" class="save btn btn-primary btn-sm"
+        style="--bs-btn-border-width: 0px; --bs-btn-font-size: .75rem;">ФИЛЬТРОВАТЬ</button>
+    </form>
+{% endif %}
+
+<div class="card p-0 overflow-auto" >
+    <div class="card-header">
+       <a href="{% url env.create_url %}" class="btn btn-primary btn-sm" role="button">Создать</a>
+    </div><!-- /card-header -->
+
+    <div class="card-body p-0">
+    <table class="table table-hover text-nowrap table-sm m-0">
+        <thead>
+        <tr>
+            {% for table_header in env.table_headers %}
+                <th>{{ table_header }}</th>
+            {% endfor %}
+                <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for obj in objs %}
+        <tr>
+            {% for column in env.columns %}
+            {% if column.url %}
+                <td><a href="{% url column.url obj.pk %}">{{ obj|get_obj_attr:column.name }}</a></td>
+            {% else %}
+                <td>{{ obj|get_obj_attr:column.name }}</td>
+            {% endif %}
+            {% endfor %}
+                <td class="text-right">
+                    <a href="{% url env.update_url obj.pk %}"><i class="fa fa-pencil-square-o"></i></a>&nbsp
+                    <a href="{% url env.delete_url obj.pk %}" ><i class="fa fa-trash" aria-hidden="true" style="color: red;"></i></a>
+                </td>
+
+        </tr>
+        {% endfor %}
+
+        </tbody>
+    </table>
+    </div> <!-- /card-body -->
+</div><!-- /card -->
+
+{% endblock %}
+

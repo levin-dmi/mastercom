@@ -28,5 +28,9 @@ urlpatterns = [
     path('payments/view/<int:payment_id>/', payment_view, name='payment_view'),
     path('payments/update/<int:pk>/', PaymentUpdateView.as_view(), name='payment_update'),
     path('payments/delete/<int:pk>/', PaymentDeleteView.as_view(), name='payment_delete'),
-
+    path('partners/', PartnersView.as_view(), name='partners'),
+    path('partners/add/', PartnerCreateView.as_view(), name='partner_add'),
+    path('partners/view/<int:pk>/', PartnerDetailView.as_view(), name='partner_view'),
+    path('partners/update/<int:pk>/', PartnerUpdateView.as_view(), name='partner_update'),
+    path('partners/delete/<int:pk>/', PartnerDeleteView.as_view(), name='partner_delete'),
 ]

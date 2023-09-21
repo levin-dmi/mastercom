@@ -1,0 +1,22 @@
+{% extends "layout/basic.html" %}
+
+{% block content %}
+{% if undeleted_contracts %}
+<h1>Прежде чем удалить партнера {{ object }}, вы должны удалить следующие договора:</h1>
+    <ul>
+        {% for contract in undeleted_contracts %}
+        <li><a href="{% url 'contract_view' contract.pk %}">{{ contract }}</a></li>
+        {% endfor %}
+    </ul>
+
+{% else %}
+
+<form method="post">
+    {% csrf_token %}
+    <p>Вы уверены что хотите удалить "{{ object }}"?</p>
+    <input type="button" onclick="history.back();" value="Отменить"/>
+    <input type="submit" value="Подтвердить">
+</form>
+{% endif %}
+{% endblock %}
+

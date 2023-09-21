@@ -1,0 +1,9 @@
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<a href="{% url 'partner_update' partner.pk %}" role="button" class="me-2" >редактировать</a>
+<a href="{% url 'partner_delete' partner.pk %}" role="button" class="me-2">удалить</a><br><br>
+<p><strong>ИНН: </strong>{{ partner.inn }}</p>
+<p><strong>Наименование: </strong>{{ partner.name }}</p>
+{% endblock %}
+

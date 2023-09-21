@@ -13,3 +13,7 @@ def currency(value):
         return '0'
     return f"{float(value):_.2f}".replace("_", " ").replace('.', ',')
 
+
+@register.filter
+def get_obj_attr(obj, attr):
+    return getattr(obj, attr)

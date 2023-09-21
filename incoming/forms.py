@@ -80,3 +80,9 @@ class ListFilterForm(Form):
         project = ChoiceField(widget=Select(), choices=projects, required=False)
         contracts = [['', 'ВСЕ'], ] + [[str(obj.pk), obj] for obj in Contract.objects.all()]
         contract = ChoiceField(widget=Select(), choices=contracts, required=False)
+
+
+class PartnerForm(ModelForm):
+    class Meta:
+        model = Partner
+        fields = ('inn', 'name', )
