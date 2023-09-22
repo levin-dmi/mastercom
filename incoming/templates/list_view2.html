@@ -3,10 +3,10 @@
 
 {% block content %}
 
-{% if filter_form %}
-<form method="POST" class="post-form pb-3 overflow-x-scroll">{% csrf_token %}
-        Проект: {{ filter_form.project }} &nbsp;&nbsp;
-        Договор: {{ filter_form.contract }} &nbsp;&nbsp;
+{% if form %}
+<form method="GET" class="post-form pb-3 overflow-x-scroll">{% csrf_token %}
+        Проект: {{ form.project }} &nbsp;&nbsp;
+        Договор: {{ form.contract }} &nbsp;&nbsp;
         <button type="submit" class="save btn btn-primary btn-sm"
         style="--bs-btn-border-width: 0px; --bs-btn-font-size: .75rem;">ФИЛЬТРОВАТЬ</button>
     </form>
@@ -31,11 +31,13 @@
         {% for obj in objs %}
         <tr>
             {% for column in env.columns %}
-            {% if column.url %}
-                <td><a href="{% url column.url obj.pk %}">{{ obj|get_obj_attr:column.name }}</a></td>
-            {% else %}
-                <td>{{ obj|get_obj_attr:column.name }}</td>
-            {% endif %}
+
+                {% if column.currency %}
+                    <td class="text-end">{% if column.url %}<a href="{% url column.url obj.pk %}">{% endif %}{{ obj|get_obj_attr:column.name|currency }}{% if column.url %}</a>{% endif %}</td>
+                {% else %}
+                    <td>{% if column.url %}<a href="{% url column.url obj.pk %}">{% endif %}{{ obj|get_obj_attr:column.name }}{% if column.url %}</a>{% endif %}</td>
+                {% endif %}
+
             {% endfor %}
                 <td class="text-right">
                     <a href="{% url env.update_url obj.pk %}"><i class="fa fa-pencil-square-o"></i></a>&nbsp

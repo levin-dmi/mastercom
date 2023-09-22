@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormMixin
 from django.views.generic.list import ListView
 from django.urls import reverse_lazy
 from django.db.models import Q, Sum, FloatField
@@ -10,6 +10,7 @@ from .models import *
 from .forms import *
 from .services.calculations import *
 from incoming.mixins import LogCreateMixin, LogUpdateMixin, LogDeleteMixin
+from django.http import HttpResponse, HttpResponseRedirect
 
 @login_required()
 def index(request):
@@ -465,6 +466,202 @@ class PartnerDeleteView(LoginRequiredMixin, DeleteView):
         context['env'] = {'contractor_section': True, 'partner_page': True, 'header': 'Удалить партнера'}
         context['undeleted_contracts'] = Contract.objects.filter(partner=context['object'])
         return context
+
+
+@login_required()
+def contractor_contracts(request):
+    objs = Contract.objects.filter(contract_type=Contract.ContractType.SALE)
+    form_initial = {}
+    if request.POST:
+        if request.POST['project']:
+            objs = objs.filter(project=int(request.POST['project']))
+            form_initial['project'] = request.POST['project']
+        if request.POST['contract']:
+            objs = objs.filter(pk=int(request.POST['contract']))
+            form_initial['contract'] = request.POST['contract']
+    form = ListFilterForm(initial=form_initial)
+    env = {'incoming_section': True, 'contract_page': True, 'header': 'Договоры'}
+    context = {'objs': objs, 'env': env, 'form': form, }
+    return render(request, 'list_view.html', context)
+
+
+class ContractsIncomingView(LoginRequiredMixin, ListView):
+    template_name = 'list_view2.html'
+    context_object_name = 'objs'
+    contract_type = Contract.ContractType.SALE
+
+    def get_queryset(self):
+        objs = Contract.objects.filter(contract_type=self.contract_type)
+        form_initial = {}
+        if self.request.GET:
+            if self.request.GET['project']:
+                objs = objs.filter(project=int(self.request.GET['project']))
+                form_initial['project'] = self.request.GET['project']
+            if self.request.GET['contract']:
+                objs = objs.filter(pk=int(self.request.GET['contract']))
+                form_initial['contract'] = self.request.GET['contract']
+        return objs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['env'] = {'incoming_section': True,
+                          'contract_page': True,
+                          'header': 'Договоры',
+                          'create_url': 'contract_add',
+                          'update_url': 'contract_update',
+                          'delete_url': 'contract_delete',
+                          'table_headers': ['Номер', 'Дата', 'Название', 'Проект', 'Сумма', 'Статус',],
+                          'columns': [{'name': 'number', 'url': 'contract_view'},
+                                      {'name': 'date'},
+                                      {'name': 'name'},
+                                      {'name': 'project'},
+                                      {'name': 'total_sum', 'currency': True},
+                                      {'name': 'status'},
+                                      ],
+                          }
+        form = ListFilterForm()
+        form_initial = {}
+        if self.request.GET:
+            if self.request.GET['project']:
+                form_initial['project'] = self.request.GET['project']
+            if self.request.GET['contract']:
+                form_initial['contract'] = self.request.GET['contract']
+        form.initial = form_initial
+        context['form'] = form
+
+        return context
+
+
+class ContractsContractorView(ContractsIncomingView):
+    contract_type = Contract.ContractType.BUY
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['env']['incoming_section'] = False
+        context['env']['contractor_section'] = True
+        context['env']['columns'][0]['url'] = 'contract_contractor_view'
+        return context
+
+
+@login_required()
+def contract_contractor_view(request, contract_id):
+    contract = Contract.objects.get(pk=contract_id)
+
+    prepaid_type = PrepaidType(contract.prepaid_close_method.key) if contract.prepaid_close_method \
+        else PrepaidType.not_defined
+
+    total_sum = float(contract.total_sum or 0)
+    material_sum = float(contract.material_sum or 0)
+    work_sum = float(contract.work_sum or 0)
+    prepaid = float(contract.prepaid or 0)
+    retention_percent = float(contract.retention_percent or 0)
+    act_sum = act_sum_for_contract(contract_id, 'total_sum')
+    material_act_sum = act_sum_for_contract(contract_id, 'material_sum')
+    work_act_sum = act_sum_for_contract(contract_id, 'work_sum')
+    pay_sum = payment_sum_for_contract(contract_id, 'total_sum')
+    prepaid_pay_sum = payment_sum_for_contract(contract_id, 'prepaid_sum')
+    retention_pay_sum = payment_sum_for_contract(contract_id, 'retention_sum')
+
+    balance = [act_sum, pay_sum, act_sum - pay_sum]
+
+    paid_from_acts = calc_paid_from_acts(total_sum, prepaid, prepaid_type, retention_percent, act_sum)
+    cashflow = list([[prepaid, paid_from_acts, act_sum * retention_percent / 100],
+                     [prepaid_pay_sum, pay_sum - prepaid_pay_sum - retention_pay_sum, retention_pay_sum]])
+    cashflow.append([cashflow[0][0] - cashflow[1][0], cashflow[0][1] - cashflow[1][1],
+                     cashflow[0][2] - cashflow[1][2], ])
+
+    working = list([[material_sum, material_act_sum, material_sum - material_act_sum],
+                    [work_sum, work_act_sum, work_sum - work_act_sum],
+                    [total_sum - material_sum - work_act_sum,
+                     act_sum - material_act_sum - work_act_sum,
+                     total_sum - material_sum - work_sum - (act_sum - material_act_sum - work_act_sum)],
+                    [total_sum, act_sum, total_sum - act_sum], ])
+
+    recon = []  # Акт сверки
+    for act in Act.objects.filter(contract=contract_id):
+        recon.append({'date': act.date, 'doc': f"Акт № {act.number}", 'debet': act.total_sum,
+                      'kredit': '', 'status': act.status,
+                      'status_ok': True if ActStatusType(act.status.key) == ActStatusType.archive else False,
+                      'total': False})
+    for pay in Payment.objects.filter(contract=contract_id):
+        recon.append({'date': pay.date, 'doc': f"Платеж № {pay.number}", 'debet': '',
+                      'kredit': pay.total_sum, 'status': pay.status,
+                      'status_ok': True if PaymentStatusType(pay.status.key) == PaymentStatusType.paid else False,
+                      'total': False})
+    recon.sort(key=lambda dictionary: dictionary['date'])
+    total_debet = act_sum_for_contract(contract_id, 'total_sum')
+    total_kredit = payment_sum_for_contract(contract_id, 'total_sum')
+    recon.append({'date': '', 'doc': "Обороты по договору",
+                  'debet': total_debet, 'kredit': total_kredit,
+                  'status': '', 'status_ok': True, 'total': True})
+    recon.append({'date': '', 'doc': "ИТОГО",
+                  'debet': total_debet - total_kredit if total_debet - total_kredit > 0 else '',
+                  'kredit': total_kredit - total_debet if total_debet - total_kredit <= 0 else '',
+                  'status': '', 'status_ok': True, 'total': True})
+
+    env = {'contractor_section': True, 'contract_page': True, 'header': f"Договор №{contract.number} от {contract.date}"}
+    context = {'obj': contract, 'env': env, 'balance': balance, 'cashflow': cashflow,
+               'working': working, 'recon': recon }
+    return render(request, 'contracts/contract_view.html', context)
+
+
+@login_required()
+def analytic_contractor(request):
+    objs = {}
+    for ctr in Contract.objects.filter(contract_type=Contract.ContractType.BUY):
+        if ctr.partner.inn not in objs:
+            objs[ctr.partner.inn] = {'name': ctr.partner, 'pk': ctr.partner.pk, 'contracts': {}, 'sum': {}}
+
+        act_sum = Act.objects.aggregate(
+            sum=Sum('total_sum',filter=Q(contract__pk=ctr.pk)))['sum'] or DEC0
+        pay_sum = Payment.objects.aggregate(
+            sum=Sum('total_sum', filter=Q(contract__pk=ctr.pk)))['sum'] or DEC0
+        prepaid_pay_sum = Payment.objects.aggregate(
+            sum=Sum('prepaid_sum', filter=Q(contract__pk=ctr.pk)))['sum'] or DEC0
+        retention_pay_sum = Payment.objects.aggregate(
+            sum=Sum('retention_sum', filter=Q(contract__pk=ctr.pk)))['sum'] or DEC0
+
+
+        if ctr.can_calculated():
+            debt_act_sum = (calc_paid_from_acts_d(ctr.total_sum,
+                                               ctr.prepaid,
+                                               PrepaidType(ctr.prepaid_close_method.key if ctr.prepaid_close_method else -1),
+                                               ctr.retention_percent,
+                                               act_sum)
+                            - (pay_sum - prepaid_pay_sum - retention_pay_sum))
+            debt_prepaid_sum = ctr.prepaid - prepaid_pay_sum
+            retention = (act_sum * ctr.retention_percent / 100 - retention_pay_sum).quantize(DEC1)
+            objs[ctr.partner.inn]['sum']['debt_act_sum'] = (
+                    objs[ctr.partner.inn]['sum'].get('debt_act_sum', 0) + debt_act_sum)
+            objs[ctr.partner.inn]['sum']['debt_prepaid_sum'] = (
+                    objs[ctr.partner.inn]['sum'].get('debt_prepaid_sum', 0) + debt_prepaid_sum)
+            objs[ctr.partner.inn]['sum']['retention'] = (
+                    objs[ctr.partner.inn]['sum'].get('retention', 0) + retention)
+        else:
+            debt_act_sum, debt_prepaid_sum, retention = '?' * 3
+
+        objs[ctr.partner.inn]['contracts'][ctr.pk] = {'pk': ctr.pk,
+                                                      'num_name': f"{ctr.number} ({ctr.name})",
+                                                      'date': ctr.date,
+                                                      'total_sum': ctr.total_sum,
+                                                      'act_sum': act_sum,
+                                                      'pay_sum': pay_sum,
+
+                                                      'debt_act_sum': debt_act_sum,
+                                                      'debt_prepaid_sum': debt_prepaid_sum,
+                                                      'retention': retention,
+                                                      }
+
+        objs[ctr.partner.inn]['sum']['total_sum'] = (
+                objs[ctr.partner.inn]['sum'].get('total_sum', 0) + (ctr.total_sum or 0))
+        objs[ctr.partner.inn]['sum']['act_sum'] = objs[ctr.partner.inn]['sum'].get('act_sum', 0) + act_sum
+        objs[ctr.partner.inn]['sum']['pay_sum'] = objs[ctr.partner.inn]['sum'].get('pay_sum', 0) + pay_sum
+
+
+    env = {'contractor_section': True, 'analytic_page': True, 'header': 'Аналитика'}
+    context = {'objs': objs, 'env': env, }
+    return render(request, 'analytic.html', context)
 
 
 def redirect_to_incoming(request):

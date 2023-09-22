@@ -58,7 +58,7 @@
                     <td></td>
                 </tr>
                 <tr>
-                    <th>НАМ ДОЛЖНЫ</th>
+                    <th>{% if env.incoming_section %}НАМ{% else %}МЫ{% endif %} ДОЛЖНЫ</th>
                     <td><span class = "text-primary">{{ balance.2|currency }}</span></td>
                 </tr>
             </tbody>
@@ -101,7 +101,7 @@
                     <td></td>
                 </tr>
                 <tr>
-                    <th>НАМ ДОЛЖНЫ</th>
+                    <th>{% if env.incoming_section %}НАМ{% else %}МЫ{% endif %} ДОЛЖНЫ</th>
                     <td><span class = "text-primary">{{ cashflow.2.0|currency }}</span></td>
                     <td><span class = "text-primary">{{ cashflow.2.1|currency }}</span></td>
                     <td><span class = "text-primary">{{ cashflow.2.2|currency }}</span></td>
@@ -170,8 +170,8 @@
             <tr>
                 <th>Дата</th>
                 <th>Документ</th>
-                <th>Дебет (нам должны)</th>
-                <th>Кредит (мы должны)</th>
+                <th>Дебет ({% if env.incoming_section %}нам{% else %}мы{% endif %} должны)</th>
+                <th>Кредит ({% if env.incoming_section %}мы{% else %}нам{% endif %} должны)</th>
                 <th>Статус документа</th>
             </tr>
         </thead>

@@ -44,7 +44,7 @@
             </a>
         </li>
         <li class="nav-item mb-3">
-            <a href="{% url 'partners' %}" class="nav-link {% if env.contractor_section %} active {% endif %}" aria-current="page">
+            <a href="{% url 'analytic_contractor' %}" class="nav-link {% if env.contractor_section %} active {% endif %}" aria-current="page">
             Подрядчики
             </a>
         </li>
@@ -100,13 +100,13 @@
             {% elif env.contractor_section %}
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a href="{% url 'index' %}" {% if env.analytic_page %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Аналитика</a>
+                    <a href="{% url 'analytic_contractor' %}" {% if env.analytic_page %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Аналитика</a>
                 </li>
                 <li class="nav-item">
                     <a href="{% url 'partners' %}" {% if env.partner_page %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Партнеры</a>
                 </li>
                 <li class="nav-item">
-                    <a href="{% url 'contracts' %}" {% if env.contract_page %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Договоры</a>
+                    <a href="{% url 'contracts_contractor' %}" {% if env.contract_page %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Договоры</a>
                 </li>
                 <li class="nav-item">
                     <a href="{% url 'acts' %}" {% if env.act_page %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Акты</a>
