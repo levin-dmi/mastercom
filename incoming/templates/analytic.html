@@ -34,7 +34,11 @@
         <tbody>
             {% for  ctr_name, ctr in prj.contracts.items %}
             <tr>
+                {% if env.incoming_section %}
                 <td><a href="{% url 'contract_view' ctr.pk %}">{{ ctr.num_name|truncatechars:25}}</a> </td>
+                {% else %}
+                <td><a href="{% url 'contract_contractor_view' ctr.pk %}">{{ ctr.num_name|truncatechars:25}}</a> </td>
+                {% endif %}
                 <td>{{ ctr.date|date:'d.m.y' }}</td>
                 <td class="text-end">{{ ctr.total_sum|currency }}</td>
                 <td class="text-end">{{ ctr.act_sum|currency }}</td>
