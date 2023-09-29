@@ -80,112 +80,103 @@ def calc_paid_from_acts_d(total_sum: Decimal, prepaid: Decimal,
         return (act_sum - act_sum * (retention_percent / 100)).quantize(DEC1)
 
 
+class ContractAnalyticService:
+    @staticmethod
+    def _calc_paid_from_acts(total_sum: Decimal, prepaid: Decimal,
+                              prepaid_type: PrepaidType, retention_percent: Decimal, act_sum: Decimal, ) -> Decimal:
+        """
+        Метод считает размер оплаты с суммы закрытых КС по договору
+
+        Args:
+            total_sum: Сумма договора
+            prepaid: Сумма аванса по договору
+            prepaid_type: способ удержания аванса
+            retention_percent: процент гарантийных удержаний
+            act_sum: сумма закрытых актов
+
+        Returns:
+            Размер оплаты, причитающийся с закрытых актов КС
+        """
+        if prepaid_type == PrepaidType.pro_rata:
+            if total_sum == 0:
+                return DEC0
+            else:
+                return (act_sum - act_sum * (prepaid / total_sum + retention_percent / 100)).quantize(DEC1)
+
+        if prepaid_type == PrepaidType.first_ks:
+            return (max(act_sum - act_sum * (retention_percent / 100) - prepaid, DEC0)).quantize(DEC1)
+
+        if prepaid_type == PrepaidType.not_defined:
+            return (act_sum - act_sum * (retention_percent / 100)).quantize(DEC1)
 
 
-#
-# @dataclass
-# class ContractAnalytic:
-#     total_sum: float
-#     prepaid: float
-#     retention_percent: float
-#     prepaid_type: PrepaidType
-#     act_sum: float
-#     matherial_act_sum: float
-#     work_act_sum: float
-#     pay_sum: float
-#     prepaid_pay_sum: float
-#     balance: List[float]
-#     cashflow: List[List[float]]
-#
-#
-# class ContractAnalyticService:
-#     @staticmethod
-#     def _calc_paid_from_acts(ctr: ContractAnalytic) -> float:
-#         """
-#         Метод считает размер оплаты с суммы закрытых КС по договору
-#
-#         Args:
-#             ctr: Данные по контракту
-#
-#         Returns:
-#             Размер оплаты, причитающийся с закрытых актов КС
-#         """
-#         if ctr.prepaid_type == PrepaidType.pro_rata:
-#             return ctr.act_sum - ctr.act_sum * (ctr.prepaid / ctr.total_sum + ctr.retention_percent / 100)
-#
-#         if ctr.prepaid_type == PrepaidType.first_ks:
-#             return max(ctr.act_sum - ctr.act_sum * (ctr.retention_percent / 100) - ctr.prepaid, 0)
-#
-#         if ctr.prepaid_type == PrepaidType.not_defined:
-#             return ctr.act_sum - ctr.act_sum * (ctr.retention_percent / 100)
-#
-#     @staticmethod
-#     def _act_sum_for_contract(contract_pk: int, field: str) -> float:
-#         act_sum = Act.objects.aggregate(sum=Sum(field,
-#                                                 output_field=FloatField(),
-#                                                 filter=Q(contract__pk=contract_pk)))['sum']
-#         return float(act_sum or 0)
-#
-#     @staticmethod
-#     def _payment_sum_for_contract(contract_pk: int, field: str) -> float:
-#         act_sum = Payment.objects.aggregate(sum=Sum(field,
-#                                                     output_field=FloatField(),
-#                                                     filter=Q(contract__pk=contract_pk)))['sum']
-#         return float(act_sum or 0)
-#
-#     def _extract_data(self, contract_pk: int) -> ContractAnalytic:
-#         contract = Contract.objects.get(pk=contract_pk)
-#         prepaid_type = PrepaidType(contract.prepaid_close_method.key) if contract.prepaid_close_method \
-#             else PrepaidType.not_defined
-#
-#         return ContractAnalytic(total_sum=float(contract.total_sum or 0),
-#                                 prepaid=float(contract.prepaid or 0),
-#                                 prepaid_type=prepaid_type,
-#                                 retention_percent=float(contract.retention_percent or 0),
-#                                 act_sum=self._act_sum_for_contract(contract_pk, 'total_sum'),
-#                                 matherial_act_sum=self._act_sum_for_contract(contract_pk, 'matherial_sum'),
-#                                 work_act_sum=self._act_sum_for_contract(contract_pk, 'work_act_sum'),
-#                                 pay_sum=self._payment_sum_for_contract(contract_pk, 'total_sum'),
-#                                 prepaid_pay_sum=self._payment_sum_for_contract(contract_pk, 'prepaid_sum'),
-#                                 balance=[],
-#                                 cashflow=[])
-#
-#     def _calculate_analytic(self, contract_data: ContractAnalytic) -> ContractAnalytic:
-#         contract_data.balance.extend([contract_data.act_sum,
-#                                      contract_data.pay_sum,
-#                                      contract_data.act_sum - contract_data.pay_sum])
-#
-#         contract_data.cashflow.append([contract_data.prepaid,
-#                                       self._calc_paid_from_acts(contract_data), ])
-#
-#
-#         cashflow = []
-#         retention_percent = 0 if not obj.retention_percent else float(obj.retention_percent)
-#         ctr_prepaid = 0 if not obj.prepaid else float(obj.prepaid)
-#         need_pay_from_acts = calc_paid_from_acts(float(obj.total_sum), ctr_prepaid, retention_percent, act_sum,
-#                                                  PrepaidType(obj.prepaid_close_method.key))
-#         cashflow.append(
-#             [ctr_prepaid, round(need_pay_from_acts, 2), round(act_sum * float(retention_percent) / 100, 2)])
-#         cashflow.append([prepaid_pay_sum, round(pay_sum - prepaid_pay_sum, 2), 0])
-#         cashflow.append([round(cashflow[0][0] - cashflow[1][0], 2), round(cashflow[0][1] - cashflow[1][1], 2),
-#                          round(cashflow[0][2] - cashflow[1][2], 2), ])
-#
-#         working = []
-#         ms = obj.material_sum if obj.material_sum else 0
-#         mas = material_act_sum if material_act_sum else 0
-#         working.append([obj.material_sum, mas, round(float(ms) - mas, 2)])
-#         working.append([obj.work_sum, work_act_sum, round(float(obj.work_sum) - work_act_sum, 2)])
-#         working.append([obj.total_sum - obj.material_sum - obj.work_sum,
-#                         round(act_sum - material_act_sum - work_act_sum, 2),
-#                         round(float(obj.total_sum - obj.material_sum - obj.work_sum) - (
-#                                     act_sum - material_act_sum - work_act_sum), 2)])
-#         working.append([obj.total_sum, act_sum, round(float(obj.total_sum) - act_sum, 2)])
-#
-#         env = {'contract_page': True, 'header': f"Договор №{obj.number} от {obj.date}"}
-#         context = {'obj': obj, 'env': env, 'balance': balance, 'cashflow': cashflow, 'working': working}
-#
-#         return contract_data
-#
-#     def calculate(self, contract_pk: int):
-#         contract_data = self._extract_data(contract_pk)
-#         return self._calculate_analytic(contract_data)
+    def _calc_contract_data(self, contract_id):
+        contract = Contract.objects.get(pk=contract_id)
+
+        prepaid_type = PrepaidType(contract.prepaid_close_method.key if contract.prepaid_close_method else -1)
+        total_sum = contract.total_sum or DEC0
+        material_sum = contract.material_sum or DEC0
+        work_sum = contract.work_sum or DEC0
+        prepaid = contract.prepaid or DEC0
+        retention_percent = contract.retention_percent or DEC0
+
+        act_sum = Act.objects.aggregate(
+            sum=Sum('total_sum', filter=Q(contract__pk=contract.pk)))['sum'] or DEC0
+        material_act_sum = Act.objects.aggregate(
+            sum=Sum('material_sum', filter=Q(contract__pk=contract.pk)))['sum'] or DEC0
+        work_act_sum = Act.objects.aggregate(
+            sum=Sum('work_sum', filter=Q(contract__pk=contract.pk)))['sum'] or DEC0
+        pay_sum = Payment.objects.aggregate(
+            sum=Sum('total_sum', filter=Q(contract__pk=contract.pk)))['sum'] or DEC0
+        prepaid_pay_sum = Payment.objects.aggregate(
+            sum=Sum('prepaid_sum', filter=Q(contract__pk=contract.pk)))['sum'] or DEC0
+        retention_pay_sum = Payment.objects.aggregate(
+            sum=Sum('retention_sum', filter=Q(contract__pk=contract.pk)))['sum'] or DEC0
+
+        balance = []
+        cashflow = []
+        working = []
+        if contract.can_calculated():
+            balance = [act_sum, pay_sum, act_sum - pay_sum]
+
+            paid_from_acts = self._calc_paid_from_acts(total_sum, prepaid, prepaid_type, retention_percent, act_sum)
+            cashflow = list([[prepaid, paid_from_acts, act_sum * retention_percent / 100],
+                             [prepaid_pay_sum, pay_sum - prepaid_pay_sum - retention_pay_sum, retention_pay_sum]])
+            cashflow.append([cashflow[0][0] - cashflow[1][0], cashflow[0][1] - cashflow[1][1],
+                             cashflow[0][2] - cashflow[1][2], ])
+
+            working = list([[material_sum, material_act_sum, material_sum - material_act_sum],
+                            [work_sum, work_act_sum, work_sum - work_act_sum],
+                            [total_sum - material_sum - work_act_sum,
+                             act_sum - material_act_sum - work_act_sum,
+                             total_sum - material_sum - work_sum - (act_sum - material_act_sum - work_act_sum)],
+                            [total_sum, act_sum, total_sum - act_sum], ])
+
+        recon = []  # Акт сверки
+        for act in Act.objects.filter(contract=contract_id):
+            recon.append({'date': act.date, 'doc': f"Акт № {act.number}", 'debet': act.total_sum,
+                          'kredit': '', 'status': act.status,
+                          'status_ok': True if ActStatusType(act.status.key) == ActStatusType.archive else False,
+                          'total': False})
+        for pay in Payment.objects.filter(contract=contract_id):
+            recon.append({'date': pay.date, 'doc': f"Платеж № {pay.number}", 'debet': '',
+                          'kredit': pay.total_sum, 'status': pay.status,
+                          'status_ok': True if PaymentStatusType(
+                              pay.status.key) == PaymentStatusType.paid else False,
+                          'total': False})
+        recon.sort(key=lambda dictionary: dictionary['date'])
+        total_debet = act_sum
+        total_kredit = pay_sum
+        recon.append({'date': '', 'doc': "Обороты по договору",
+                      'debet': total_debet, 'kredit': total_kredit,
+                      'status': '', 'status_ok': True, 'total': True})
+        recon.append({'date': '', 'doc': "ИТОГО",
+                      'debet': total_debet - total_kredit if total_debet - total_kredit > 0 else '',
+                      'kredit': total_kredit - total_debet if total_debet - total_kredit <= 0 else '',
+                      'status': '', 'status_ok': True, 'total': True})
+
+        return {'balance': balance, 'cashflow': cashflow, 'working': working, 'recon': recon}
+
+
+    def calculate(self, contract_id: int):
+        return self._calc_contract_data(contract_id)

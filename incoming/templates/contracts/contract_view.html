@@ -4,30 +4,30 @@
 {% block content %}
 <div class="card border-secondary mb-4 overflow-auto">
     <div class="card-header d-flex">
-        <h5 class="mb-0 me-2">{{ obj.name }}</h5>
-        <a href="{% url 'contract_update' obj.pk %}" role="button" class="me-2">редактировать</a>
-        <a href="{% url 'contract_delete' obj.pk %}" role="button" class="me-2">удалить</a>
-        <a href="{% url 'act_add_to_ctr' obj.pk %}" role="button" class="me-2">+ акт</a>
-        <a href="{% url 'payment_add_to_ctr' obj.pk %}" role="button">+ платеж</a>
+        <h5 class="mb-0 me-2">{{ contract.name }}</h5>
+        <a href="{% url 'contract_update' contract.pk %}" role="button" class="me-2">редактировать</a>
+        <a href="{% url 'contract_delete' contract.pk %}" role="button" class="me-2">удалить</a>
+        <a href="{% url 'act_add_to_ctr' contract.pk %}" role="button" class="me-2">+ акт</a>
+        <a href="{% url 'payment_add_to_ctr' contract.pk %}" role="button">+ платеж</a>
     </div><!-- /card-header -->
 
     <div class="row p-3">
     <div class="col">
-        <p><strong>Сумма: <span style="color: green;">{{ obj.total_sum|currency }}</span></strong></p>
-        <p><strong>Проект: </strong>{{ obj.project.key }} ({{ obj.project.name }})</p>
-        <p><strong>Статус: </strong>{{ obj.status.name }}</p>
-        <p><strong>Процент удержаний: </strong>{{ obj.retention_percent|currency }}%</p>
+        <p><strong>Сумма: <span style="color: green;">{{ contract.total_sum|currency }}</span></strong></p>
+        <p><strong>Проект: </strong>{{ contract.project.key }} ({{ contract.project.name }})</p>
+        <p><strong>Статус: </strong>{{ contract.status.name }}</p>
+        <p><strong>Процент удержаний: </strong>{{ contract.retention_percent|currency }}%</p>
     </div>
     <div class="col">
-    <p><strong>Сумма материалов: </strong>{{ obj.material_sum|currency }}</p>
-    <p><strong>Сумма работ: </strong>{{ obj.work_sum|currency }}</p>
-    <p><strong>Аванс: </strong>{{ obj.prepaid|currency }}</p>
-    <p><strong>Способ закрытия аванса: </strong>{% if obj.prepaid_close_method %} {{ obj.prepaid_close_method.name }}
+    <p><strong>Сумма материалов: </strong>{{ contract.material_sum|currency }}</p>
+    <p><strong>Сумма работ: </strong>{{ contract.work_sum|currency }}</p>
+    <p><strong>Аванс: </strong>{{ contract.prepaid|currency }}</p>
+    <p><strong>Способ закрытия аванса: </strong>{% if contract.prepaid_close_method %} {{ contract.prepaid_close_method.name }}
                                                 {% else %} ???
                                                 {% endif %}</p>
     </div>
     <div class="col">
-      <p>{{ obj.description }}</p>
+      <p>{{ contract.description }}</p>
     </div>
   </div>
 </div> <!-- main card -->

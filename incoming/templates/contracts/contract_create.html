@@ -19,6 +19,8 @@ const calcOtherSum = () => {
     {% csrf_token %}
     Номер: {{ form.number }} <br><br>
     Дата: {{ form.date }} <br><br>
+    Контрагент: {{ form.partner }} <br><br>
+    Тип договора: {{ form.contract_type }} <br><br>
     Название: {{ form.name }} <br><br>
     Описание: {{ form.description }} <br><br>
     Проект: {{ form.project }} <br><br>

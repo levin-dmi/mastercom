@@ -16,9 +16,13 @@ class ProjectForm(ModelForm):
 
 
 class ContractForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(ContractForm, self).__init__(*args, **kwargs)
+        self.fields['contract_type'].disabled = True
+
     class Meta:
         model = Contract
-        fields = ('number', 'date', 'name', 'description', 'project', 'total_sum', 'material_sum', 'work_sum',
+        fields = ('number', 'date', 'partner', 'contract_type', 'name', 'description', 'project', 'total_sum', 'material_sum', 'work_sum',
                   'prepaid', 'prepaid_close_method', 'retention_percent', 'status')
 
     def clean_total_sum(self):
