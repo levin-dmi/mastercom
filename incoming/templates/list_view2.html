@@ -40,7 +40,7 @@
 
             {% endfor %}
                 <td class="text-right">
-                    <a href="{% url env.update_url env.section obj.pk %}"><i class="fa fa-pencil-square-o"></i></a>&nbsp
+                    <a href="{% url env.update_url obj.pk %}"><i class="fa fa-pencil-square-o"></i></a>&nbsp
                     <a href="{% url env.delete_url obj.pk %}" ><i class="fa fa-trash" aria-hidden="true" style="color: red;"></i></a>
                 </td>
 

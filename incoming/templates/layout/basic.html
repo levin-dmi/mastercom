@@ -6,9 +6,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    {% if env.incoming_section %}
+    {% if 'inc/' in request.path or request.path == '/incoming/' %}
     <title>Мастерком digital :: ДОХОДЫ</title>
-    {% elif env.contractor_section %}
+    {% elif 'ctr/' in request.path %}
     <title>Мастерком digital :: ПОДРЯДЧИКИ</title>
     {% endif %}
 
@@ -39,12 +39,12 @@
 
         <ul class="nav nav-pills flex-column mb-auto">
         <li class="nav-item mb-3">
-            <a href="{% url 'index' %}" class="nav-link {% if env.incoming_section %} active {% endif %}" aria-current="page">
+            <a href="{% url 'index' %}" class="nav-link {% if 'inc/' in request.path or request.path == '/incoming/' %} active {% endif %}" aria-current="page">
             Доходы
             </a>
         </li>
         <li class="nav-item mb-3">
-            <a href="{% url 'analytic_contractor' %}" class="nav-link {% if env.contractor_section %} active {% endif %}" aria-current="page">
+            <a href="{% url 'analytic_contractor' %}" class="nav-link {% if 'ctr/' in request.path %} active {% endif %}" aria-current="page">
             Подрядчики
             </a>
         </li>
@@ -79,40 +79,40 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            {% if env.incoming_section %}
+            {% if 'inc/' in request.path or request.path == '/incoming/' %}
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a href="{% url 'index' %}" {% if env.analytic_page %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Аналитика</a>
+                    <a href="{% url 'index' %}" {% if request.path == '/incoming/' %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Аналитика</a>
                 </li>
                 <li class="nav-item">
-                    <a href="{% url 'projects' %}" {% if env.project_page %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Проекты</a>
+                    <a href="{% url 'projects' %}" {% if '/projects/' in request.path %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Проекты</a>
                 </li>
                 <li class="nav-item">
-                    <a href="{% url 'contracts' %}" {% if env.contract_page %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Договоры</a>
+                    <a href="{% url 'contracts' %}" {% if '/contracts/' in request.path %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Договоры</a>
                 </li>
                 <li class="nav-item">
-                    <a href="{% url 'acts' %}" {% if env.act_page %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Акты</a>
+                    <a href="{% url 'acts' %}" {% if '/acts/' in request.path %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Акты</a>
                 </li>
                 <li class="nav-item">
-                    <a href="{% url 'payments' %}" {% if env.payment_page %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Оплаты</a>
+                    <a href="{% url 'payments' %}" {% if '/payments/' in request.path %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Оплаты</a>
                 </li>
             </ul>
-            {% elif env.contractor_section %}
+            {% elif 'ctr/' in request.path %}
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a href="{% url 'analytic_contractor' %}" {% if env.analytic_page %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Аналитика</a>
+                    <a href="{% url 'analytic_contractor' %}" {% if '/analytic_contractor/' in request.path %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Аналитика</a>
                 </li>
                 <li class="nav-item">
-                    <a href="{% url 'partners' %}" {% if env.partner_page %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Партнеры</a>
+                    <a href="{% url 'partners' %}" {% if '/partners/' in request.path %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Партнеры</a>
                 </li>
                 <li class="nav-item">
-                    <a href="{% url 'contracts_contractor' %}" {% if env.contract_page %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Договоры</a>
+                    <a href="{% url 'contracts_contractor' %}" {% if '/contracts/' in request.path %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Договоры</a>
                 </li>
                 <li class="nav-item">
-                    <a href="{% url 'acts' %}" {% if env.act_page %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Акты</a>
+                    <a href="{% url 'acts' %}" {% if '/acts/' in request.path %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Акты</a>
                 </li>
                 <li class="nav-item">
-                    <a href="{% url 'payments' %}" {% if env.payment_page %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Оплаты</a>
+                    <a href="{% url 'payments' %}" {% if '/payments/' in request.path %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Оплаты</a>
                 </li>
             </ul>
             {% endif %}

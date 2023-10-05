@@ -1,4 +1,5 @@
-from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.views.generic.edit import CreateView, UpdateView, DeleteView, View
+from django.views.generic.base import ContextMixin
 from incoming.models import *
 
 class LogCreateMixin(CreateView):
@@ -51,3 +52,22 @@ class LogDeleteMixin(DeleteView):
                   data=old_data).save()
 
         return super().delete(*args, **kwargs)
+
+
+class AddCtxMixin(ContextMixin):
+    """Добавление переменных контекста. Если такая переменная существует в виде словаря,
+    словари объединяются. Иначе перезаписываем переменную"""
+    context_vars = {}
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        for context_var in self.context_vars:
+            if context_var in context:
+                try:
+                    context[context_var].update(self.context_vars[context_var])
+                except AttributeError:
+                    context[context_var] = self.context_vars[context_var]
+            else:
+                context[context_var] = self.context_vars[context_var]
+
+        return context

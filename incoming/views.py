@@ -9,7 +9,7 @@ from django.db.models import Q, Sum, FloatField
 from .models import *
 from .forms import *
 from .services.calculations import *
-from incoming.mixins import LogCreateMixin, LogUpdateMixin, LogDeleteMixin
+from incoming.mixins import LogCreateMixin, LogUpdateMixin, LogDeleteMixin, AddCtxMixin
 from django.http import HttpResponse, HttpResponseRedirect
 
 @login_required()
@@ -65,36 +65,39 @@ def index(request):
         objs[ctr.project.key]['sum']['pay_sum'] = objs[ctr.project.key]['sum'].get('pay_sum', 0) + pay_sum
 
 
-    env = {'incoming_section': True, 'incoming_section': True, 'analytic_page': True, 'header': 'Аналитика'}
+    env = {'header': 'Аналитика'}
     context = {'objs': objs, 'env': env, }
     return render(request, 'analytic.html', context)
 
 
-@login_required()
-def projects(request):
-    objs = Project.objects.all()
-    env = {'incoming_section': True, 'project_page': True, 'header': 'Проекты'}
-    context = {'objs': objs, 'env': env, }
-    return render(request, 'list_view.html', context)
+class ProjectsView(LoginRequiredMixin, AddCtxMixin, ListView):
+    model = Project
+    template_name = 'list_view2.html'
+    context_object_name = 'objs'
+    context_vars = {'env':
+                        {'header': 'Проекты',
+                         'create_url': 'project_add',
+                         'update_url': 'project_update',
+                         'delete_url': 'project_delete',
+                         'table_headers': ['Код проекта', 'Наименование'],
+                         'columns': [{'name': 'key', 'url': 'project_view'},
+                                     {'name': 'name'}],
+                      }}
+
 
 
 @login_required()
 def project_view(request, project_id):
     prj = Project.objects.get(pk=project_id)
-    env = {'incoming_section': True, 'project_page': True}
-    context = {'env': env, 'prj': prj, }
+    context = {'prj': prj, }
     return render(request, 'projects/project_view.html', context)
 
 
-class ProjectCreateView(LoginRequiredMixin, CreateView):
+class ProjectCreateView(LoginRequiredMixin, AddCtxMixin, CreateView):
     template_name = 'projects/project_create.html'
     form_class = ProjectForm
     success_url = reverse_lazy('projects')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['env'] = {'incoming_section': True, 'project_page': True}
-        return context
+    context_vars = {'env':{'header': 'Новый проект'}}
 
 
 class ProjectUpdateView(LoginRequiredMixin, UpdateView):
@@ -102,11 +105,6 @@ class ProjectUpdateView(LoginRequiredMixin, UpdateView):
     template_name = 'projects/project_update.html'
     form_class = ProjectForm
     success_url = reverse_lazy('projects')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['env'] = {'incoming_section': True, 'project_page': True}
-        return context
 
 
 class ProjectDeleteView(LoginRequiredMixin, DeleteView):
@@ -116,7 +114,6 @@ class ProjectDeleteView(LoginRequiredMixin, DeleteView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['env'] = {'incoming_section': True, 'project_page': True}
         context['undeleted_contracts'] = Contract.objects.filter(project=context['object'])
         return context
 
@@ -141,9 +138,7 @@ class ContractsView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        context['env'] = {'incoming_section': True,
-                          'contract_page': True,
-                          'header': 'Договоры',
+        context['env'] = {'header': 'Договоры',
                           'create_url': 'contract_add',
                           'section': 'incoming',
                           'update_url': 'contract_update',
@@ -179,8 +174,7 @@ class ContractDetailView(LoginRequiredMixin, DetailView):
         header = f"Договор №{context['object'].number} от {context['object'].date}"
         if context['object'].partner:
             header += f" [{context['object'].partner}]"
-        context['env'] = {'incoming_section': True, 'contract_page': True,
-                          'header': header}
+        context['env'] = {'header': header}
         calc = ContractAnalyticService().calculate(context['object'].pk)
         context.update(calc)
         return context
@@ -199,7 +193,7 @@ class ContractCreateView(LoginRequiredMixin, LogCreateMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['env'] = {'incoming_section': True, 'contract_page': True}
+        context['env'] = {'headr': 'Новый договор'}
         if 'project_id' in context['view'].kwargs:
             context['form'].initial['project'] = context['view'].kwargs['project_id']
         return context
@@ -211,11 +205,6 @@ class ContractUpdateView(LoginRequiredMixin, LogUpdateMixin, UpdateView):
     form_class = ContractForm
     success_url = reverse_lazy('contracts')
     log_data = ['number', 'date', 'total_sum'], ['total_sum']
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['env'] = {'incoming_section': True, 'contract_page': True}
-        return context
 
 
 class ContractDeleteView(LoginRequiredMixin, LogDeleteMixin, DeleteView):
@@ -230,7 +219,6 @@ class ContractDeleteView(LoginRequiredMixin, LogDeleteMixin, DeleteView):
         undeleted_payments = Payment.objects.filter(contract=context['object'])
         context['undeleted_acts'] = undeleted_acts
         context['undeleted_payments'] = undeleted_payments
-        context['env'] = {'incoming_section': True, 'contract_page': True}
         return context
 
 @login_required()
@@ -245,7 +233,7 @@ def acts(request):
             objs = objs.filter(contract=int(request.POST['contract']))
             form_initial['contract'] = request.POST['contract']
     form = ListFilterForm(initial=form_initial)
-    env = {'incoming_section': True, 'act_page': True, 'header': 'Акты'}
+    env = {'header': 'Акты'}
     context = {'objs': objs, 'env': env, 'form': form}
     return render(request, 'list_view.html', context)
 
@@ -276,8 +264,7 @@ def act_view(request, act_id):
                                                 act.contract.retention_percent,
                                                 act.total_sum)
             calc['fact_prepaid'] = fact_prepaid
-    env = {'incoming_section': True, 'act_page': True}
-    context = {'env': env, 'act': act, 'calc': calc}
+    context = {'act': act, 'calc': calc}
     return render(request, 'acts/act_view.html', context)
 
 
@@ -289,7 +276,6 @@ class ActCreateView(LoginRequiredMixin, LogCreateMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['env'] = {'incoming_section': True, 'act_page': True}
         if 'contract_id' in context['view'].kwargs:
             context['form'].initial['contract'] = context['view'].kwargs['contract_id']
 
@@ -306,23 +292,12 @@ class ActUpdateView(LoginRequiredMixin, LogUpdateMixin, UpdateView):
     success_url = reverse_lazy('acts')
     log_data = ['number', 'date', 'total_sum'], ['total_sum']
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['env'] = {'incoming_section': True, 'act_page': True}
-        return context
-
 
 class ActDeleteView(LoginRequiredMixin, LogDeleteMixin, DeleteView):
     model = Act
     template_name = 'acts/act_delete.html'
-    # form_class = ActForm
     success_url = reverse_lazy('acts')
     log_data = ['number', 'date', 'total_sum']
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['env'] = {'incoming_section': True, 'act_page': True}
-        return context
 
 
 @login_required()
@@ -337,7 +312,7 @@ def payments(request):
             objs = objs.filter(contract=int(request.POST['contract']))
             form_initial['contract'] = request.POST['contract']
     form = ListFilterForm(initial=form_initial)
-    env = {'incoming_section': True, 'payment_page': True, 'header': 'Оплаты', }
+    env = {'header': 'Оплаты', }
     context = {'objs': objs, 'env': env, 'form': form, }
     return render(request, 'list_view.html', context)
 
@@ -345,8 +320,7 @@ def payments(request):
 @login_required()
 def payment_view(request, payment_id):
     pay = Payment.objects.get(pk=payment_id)
-    env = {'incoming_section': True, 'payment_page': True}
-    context = {'env': env, 'pay': pay, }
+    context = {'pay': pay, }
     return render(request, 'payments/payment_view.html', context)
 
 
@@ -359,7 +333,6 @@ class PaymentCreateView(LoginRequiredMixin, LogCreateMixin, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['form'].initial['status'] = PaymentStatus.objects.get(key=PaymentStatusType.paid.value)
-        context['env'] = {'incoming_section': True, 'payment_page': True}
         if 'contract_id' in context['view'].kwargs:
             context['form'].initial['contract'] = context['view'].kwargs['contract_id']
         return context
@@ -372,22 +345,12 @@ class PaymentUpdateView(LoginRequiredMixin, LogUpdateMixin, UpdateView):
     success_url = reverse_lazy('payments')
     log_data = ['number', 'date', 'total_sum'], ['total_sum']
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['env'] = {'incoming_section': True, 'payment_page': True}
-        return context
-
 
 class PaymentDeleteView(LoginRequiredMixin, LogDeleteMixin, DeleteView):
     model = Payment
     template_name = 'payments/payment_delete.html'
     success_url = reverse_lazy('payments')
     log_data = ['number', 'date', 'total_sum']
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['env'] = {'incoming_section': True, 'payment_page': True}
-        return context
 
 
 class PartnerDetailView(LoginRequiredMixin, DetailView):
@@ -396,7 +359,7 @@ class PartnerDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['env'] = {'contractor_section': True, 'partner_page': True, 'header': context['object']}
+        context['env'] = {'header': context['object']}
         return context
 
 
@@ -409,9 +372,7 @@ class PartnersView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['env'] = {'contractor_section': True,
-                          'partner_page': True,
-                          'header': 'Партнеры',
+        context['env'] = {'header': 'Партнеры',
                           'create_url': 'partner_add',
                           'update_url': 'partner_update',
                           'delete_url': 'partner_delete',
@@ -422,27 +383,19 @@ class PartnersView(LoginRequiredMixin, ListView):
         return context
 
 
-class PartnerCreateView(LoginRequiredMixin, CreateView):
+class PartnerCreateView(LoginRequiredMixin, AddCtxMixin, CreateView):
     template_name = 'create.html'
     form_class = PartnerForm
     success_url = reverse_lazy('partners')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['env'] = {'contractor_section': True, 'partner_page': True, 'header': 'Новый партнер'}
-        return context
+    context_vars = {'env': {'header': 'Новый партнер',}}
 
 
-class PartnerUpdateView(LoginRequiredMixin, UpdateView):
+class PartnerUpdateView(LoginRequiredMixin, AddCtxMixin, UpdateView):
     model = Partner
     template_name = 'create.html'
     form_class = PartnerForm
     success_url = reverse_lazy('partners')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['env'] = {'contractor_section': True, 'partner_page': True, 'header': 'Обновить данные партнера'}
-        return context
+    context_vars = {'env': {'header': 'Обновить данные партнера', }}
 
 
 class PartnerDeleteView(LoginRequiredMixin, DeleteView):
@@ -452,7 +405,7 @@ class PartnerDeleteView(LoginRequiredMixin, DeleteView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['env'] = {'contractor_section': True, 'partner_page': True, 'header': 'Удалить партнера'}
+        context['env'] = {'header': 'Удалить партнера'}
         context['undeleted_contracts'] = Contract.objects.filter(partner=context['object'])
         return context
 
@@ -462,19 +415,13 @@ class ContractsContractorView(ContractsView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['env']['incoming_section'] = False
-        context['env']['contractor_section'] = True
         context['env']['columns'][0]['url'] = 'contract_contractor_view'
         context['env']['create_url'] = 'contract_contractor_add'
         return context
 
 
 class ContractContractorDetailView(ContractDetailView):
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['env']['incoming_section'] = False
-        context['env']['contractor_section'] = True
-        return context
+    pass
 
 
 class ContractContractorCreateView(ContractCreateView):
@@ -488,11 +435,13 @@ class ContractContractorCreateView(ContractCreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['env']['incoming_section'] = False
-        context['env']['contractor_section'] = True
         if 'partner_id' in context['view'].kwargs:
             context['form'].initial['partner'] = context['view'].kwargs['partner_id']
         return context
+
+
+class ContractContractorUpdateView(ContractUpdateView):
+    success_url = reverse_lazy('contracts_contractor')
 
 @login_required()
 def analytic_contractor(request):
@@ -547,7 +496,7 @@ def analytic_contractor(request):
         objs[ctr.partner.inn]['sum']['pay_sum'] = objs[ctr.partner.inn]['sum'].get('pay_sum', 0) + pay_sum
 
 
-    env = {'contractor_section': True, 'analytic_page': True, 'header': 'Аналитика'}
+    env = {'header': 'Аналитика'}
     context = {'objs': objs, 'env': env, }
     return render(request, 'analytic.html', context)
 
