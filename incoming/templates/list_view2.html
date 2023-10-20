@@ -3,14 +3,26 @@
 
 {% block content %}
 
-{% if form %}
+
+
+{% if filter.form %}
 <form method="GET" class="post-form pb-3 overflow-x-scroll">{% csrf_token %}
-        Проект: {{ form.project }} &nbsp;&nbsp;
-        Договор: {{ form.contract }} &nbsp;&nbsp;
+    {% for field in filter.form %}
+
+        {{ field.errors }}
+        {{ field.label_tag }} {{ field }} &nbsp;&nbsp;
+        {% if field.help_text %}
+        <p class="help">{{ field.help_text|safe }}</p>
+        {% endif %}
+
+    {% endfor %}
         <button type="submit" class="save btn btn-primary btn-sm"
         style="--bs-btn-border-width: 0px; --bs-btn-font-size: .75rem;">ФИЛЬТРОВАТЬ</button>
     </form>
 {% endif %}
+
+
+
 
 <div class="card p-0 overflow-auto" >
     <div class="card-header">

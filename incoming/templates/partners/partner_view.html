@@ -1,6 +1,7 @@
 {% extends "layout/basic.html" %}
 
 {% block content %}
+<h3 class="text-primary" style="display:inline">{{ partner.name }}</h3>
 <a href="{% url 'partner_update' partner.pk %}" role="button" class="me-2" >редактировать</a>
 <a href="{% url 'partner_delete' partner.pk %}" role="button" class="me-2">удалить</a><br><br>
 <p><strong>ИНН: </strong>{{ partner.inn }}</p>
