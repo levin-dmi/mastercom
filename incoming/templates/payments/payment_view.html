@@ -2,15 +2,15 @@
 {% load filters %}
 
 {% block content %}
-<h3 class="text-primary" style="display:inline">Платеж № {{ pay.number }}</h3>
-<a href="{% url 'payment_update' pay.pk %}" role="button" class="me-2" >редактировать</a>
-<a href="{% url 'payment_delete' pay.pk %}" role="button" class="me-2">удалить</a><br><br>
-<p><strong>Дата: </strong>{{ pay.date }}</p>
-<p><strong>Номер: </strong>{{ pay.contract.number }}</p>
-<p><strong>Статус: </strong>{{ pay.status }}</p>
-<p><strong>Сумма: </strong>{{ pay.total_sum|currency }}</p>
-<p><strong>В том числе сумма аванса: </strong>{{ pay.prepaid_sum|currency }}</p>
-<p><strong>В том числе сумма удержаний: </strong>{{ pay.retention_sum|currency }}</p>
+<h3 class="text-primary" style="display:inline">Платеж № {{ payment.number }}</h3>
+<a href="{% url 'payment_update' payment.pk %}" role="button" class="me-2" >редактировать</a>
+<a href="{% url 'payment_delete' payment.pk %}" role="button" class="me-2">удалить</a><br><br>
+<p><strong>Дата: </strong>{{ payment.date }}</p>
+<p><strong>Номер: </strong>{{ payment.contract.number }}</p>
+<p><strong>Статус: </strong>{{ payment.status }}</p>
+<p><strong>Сумма: </strong>{{ payment.total_sum|currency }}</p>
+<p><strong>В том числе сумма аванса: </strong>{{ payment.prepaid_sum|currency }}</p>
+<p><strong>В том числе сумма удержаний: </strong>{{ payment.retention_sum|currency }}</p>
 
 {% endblock %}
 

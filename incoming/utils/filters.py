@@ -13,7 +13,7 @@ def get_contract_choices(request):
     if 'inc/' in request.path:
         return contracts.filter(contract_type=Contract.ContractType.SALE)
     else:
-        return contracts.objects.filter(contract_type=Contract.ContractType.BUY)
+        return contracts.filter(contract_type=Contract.ContractType.BUY)
 
 
 def get_project_choices(request):

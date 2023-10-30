@@ -122,7 +122,6 @@ class ContractsView(LoginRequiredMixin, FilterView):
     template_name = 'list_view2.html'
     context_object_name = 'objs'
     filterset_class = ContractFilter
-    contract_type = Contract.ContractType.SALE
     extra_context = {'env': {'header': 'Договоры',
                              'create_url': 'contract_add',
                              'update_url': 'contract_update',
@@ -273,12 +272,13 @@ class PaymentsView(LoginRequiredMixin, FilterView):
     template_name = 'list_view2.html'
     context_object_name = 'objs'
     filterset_class = PaymentFilter
+    queryset = Payment.objects.filter(contract__contract_type=Contract.ContractType.SALE)
     extra_context = {'env': {'header': 'Оплаты',
                              'create_url': 'payment_add',
                              'update_url': 'payment_update',
                              'delete_url': 'payment_delete',
                              'table_headers': ['Номер платежа', 'Дата', 'Договор', 'Сумма', 'В т.ч. аванс', 'В т.ч. возврат удержаний'],
-                             'columns': [{'name': 'number', 'url': 'act_view'},
+                             'columns': [{'name': 'number', 'url': 'payment_view'},
                                          {'name': 'date'},
                                          {'name': 'contract'},
                                          {'name': 'total_sum', 'currency': True},
@@ -287,11 +287,9 @@ class PaymentsView(LoginRequiredMixin, FilterView):
                           }}
 
 
-@login_required()
-def payment_view(request, payment_id):
-    pay = Payment.objects.get(pk=payment_id)
-    context = {'pay': pay, }
-    return render(request, 'payments/payment_view.html', context)
+class PaymentDetailView(LoginRequiredMixin, DetailView):
+    model = Payment
+    template_name = 'payments/payment_view.html'
 
 
 class PaymentCreateView(LoginRequiredMixin, LogCreateMixin, CreateView):
@@ -379,7 +377,6 @@ class ContractsContractorView(ContractsView):
         context['env']['create_url'] = 'contract_contractor_add'
         context['env']['update_url'] = 'contract_contractor_update'
         context['env']['delete_url'] = 'contract_contractor_delete'
-
         return context
 
 
@@ -410,6 +407,35 @@ class ContractContractorUpdateView(ContractUpdateView):
 
 class ContractContractorDeleteView(ContractDeleteView):
     success_url = reverse_lazy('contracts_contractor')
+
+
+class PaymentContractorView(PaymentsView):
+    queryset = Payment.objects.filter(contract__contract_type=Contract.ContractType.BUY)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['env']['columns'][0]['url'] = 'payment_contractor_view'
+        context['env']['create_url'] = 'payment_contractor_add'
+        context['env']['update_url'] = 'payment_contractor_update'
+        context['env']['delete_url'] = 'payment_contractor_delete'
+        return context
+
+class PaymentContractorDetailView(PaymentDetailView):
+    pass
+
+
+class PaymentContractorCreateView(PaymentCreateView):
+    form_class = PaymentContractorForm
+    success_url = reverse_lazy('payments_contractor')
+
+
+class PaymentContractorUpdateView(PaymentUpdateView):
+    form_class = PaymentContractorForm
+    success_url = reverse_lazy('payments_contractor')
+
+
+class PaynmentContractorDeleteView(PaymentDeleteView):
+    success_url = reverse_lazy('payments_contractor')
 
 
 @login_required()

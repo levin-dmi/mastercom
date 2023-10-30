@@ -48,6 +48,10 @@ class ActForm(ModelForm):
         model = Act
         fields = ('number', 'date', 'contract', 'total_sum', 'material_sum', 'work_sum', 'status')
 
+    def __init__(self, *args, **kwargs):
+        super(ActForm, self).__init__(*args, **kwargs)
+        self.fields['contract'].queryset = Contract.objects.filter(contract_type=Contract.ContractType.SALE)
+
     def clean_total_sum(self):
         total_sum = (self.cleaned_data['total_sum'] or 0)
 
@@ -57,10 +61,21 @@ class ActForm(ModelForm):
 
         return self.cleaned_data['total_sum']
 
+
+class ActContractorForm(ActForm):
+    def __init__(self, *args, **kwargs):
+        super(ActForm, self).__init__(*args, **kwargs)
+        self.fields['contract'].queryset = Contract.objects.filter(contract_type=Contract.ContractType.BUY)
+
+
 class PaymentForm(ModelForm):
     class Meta:
         model = Payment
         fields = ('number', 'date', 'contract', 'total_sum', 'prepaid_sum', 'retention_sum', 'status')
+
+    def __init__(self, *args, **kwargs):
+        super(PaymentForm, self).__init__(*args, **kwargs)
+        self.fields['contract'].queryset = Contract.objects.filter(contract_type=Contract.ContractType.SALE)
 
     def clean_total_sum(self):
         total_sum = self.cleaned_data['total_sum']
@@ -76,6 +91,12 @@ class PaymentForm(ModelForm):
 
     def clean_retention_sum(self):
         return self.cleaned_data['retention_sum'] or 0
+
+
+class PaymentContractorForm(PaymentForm):
+    def __init__(self, *args, **kwargs):
+        super(PaymentForm, self).__init__(*args, **kwargs)
+        self.fields['contract'].queryset = Contract.objects.filter(contract_type=Contract.ContractType.BUY)
 
 
 class ListFilterForm(Form):

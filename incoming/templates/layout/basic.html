@@ -112,7 +112,7 @@
                     <a href="{% url 'acts' %}" {% if '/acts/' in request.path %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Акты</a>
                 </li>
                 <li class="nav-item">
-                    <a href="{% url 'payments' %}" {% if '/payments/' in request.path %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Оплаты</a>
+                    <a href="{% url 'payments_contractor' %}" {% if '/payments/' in request.path %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Оплаты</a>
                 </li>
             </ul>
             {% endif %}
