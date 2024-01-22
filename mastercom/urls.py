@@ -21,7 +21,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.conf import settings
 
 urlpatterns = [
-    path('', redirect_to_incoming),
+    path('', redirect_to_incoming, name='home'),
     path('admin/', admin.site.urls),
     path('incoming/', include('incoming.urls')),
     path('accounts/login/', LoginView.as_view(), name='login'),

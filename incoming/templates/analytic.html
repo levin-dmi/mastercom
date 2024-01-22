@@ -7,7 +7,11 @@
 <div class="card border-secondary p-0 mb-4 overflow-auto">
     <div class="card-header d-flex">
         <h5 class="mb-0 me-2">{{ prj.name }}</h5>
-        <a href="{% url 'contract_add_to_prj' prj.pk %}" role="button">+ договор</a>
+        {% if 'inc/' in request.path or request.path == '/incoming/' %}
+            <a href="{% url 'contract_add_to_prj' prj.pk %}" role="button">+ договор</a>
+        {% else %}
+            <a href="{% url 'contract_contracor_add_to_part' prj.pk %}" role="button">+ договор</a>
+        {% endif %}
         <div class="ms-auto">
         <button class="btn btn-link"
                 style="--bs-btn-padding-y: 0; --bs-btn-padding-x: 0; "

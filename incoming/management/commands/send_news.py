@@ -7,6 +7,7 @@ from django.template.loader import render_to_string
 from ...services.calculations import *
 from datetime import datetime, timedelta
 
+
 class Command(BaseCommand):
     """
     Sends an email to the provided addresses.
@@ -24,21 +25,25 @@ class Command(BaseCommand):
             return
 
         tz = timezone.get_default_timezone()
-        email_text = \
-            """Добрый вечер! 
-            Последние изменения в данных учета исполнения договоров:\n\n"""
+        # email_text = \
+        #     """Добрый вечер!
+        #     Последние изменения в данных учета исполнения договоров:\n\n"""
         changes = []
         for change_obj in ChangeLog.objects.filter(sent=False):
             change = (f"\n{change_obj.user} [{change_obj.changed.astimezone(tz).strftime('%d.%m.%y %H:%M')}]: "
                       f"{ChangeLog.LogAction(change_obj.action_on_model).label} в таблице {change_obj.model}\n\t\t")
-            email_text += change
+            # email_text += change
             for detail_name, detail in change_obj.data.items():
+
+                detail = 'ДОХОДЫ' if detail == 'sale' else detail
+                detail = 'ПОДРЯДЧИКИ' if detail == 'buy' else detail
                 change += f"{detail_name}: {detail}\t"
-                email_text += f"{detail_name}: {detail}\t"
+                # email_text += f"{detail_name}: {detail}\t"
             changes.append(change)
-            email_text += "\n"
+            # email_text += "\n"
 
         debts = []
+        debts_sum = 0
         for ctr in Contract.objects.all():
             if not ctr.can_calculated():
                 continue
@@ -52,7 +57,7 @@ class Command(BaseCommand):
             retention_pay_sum = Payment.objects.aggregate(
                 sum=Sum('retention_sum', filter=Q(contract__pk=ctr.pk)))['sum'] or DEC0
 
-            debt_act_sum = (calc_paid_from_acts_d(ctr.total_sum,
+            debt_act_sum = (ContractAnalyticService.calc_paid(ctr.total_sum,
                                                   ctr.prepaid,
                                                   PrepaidType(
                                                       ctr.prepaid_close_method.key if ctr.prepaid_close_method else -1),
@@ -64,10 +69,13 @@ class Command(BaseCommand):
 
             if debt_act_sum > 0:
                 debts.append({'contract': ctr, 'sum': debt_act_sum, 'reason': 'Оплата КС2'})
+                debts_sum += debt_act_sum
             if debt_prepaid_sum > 0:
                 debts.append({'contract': ctr, 'sum': debt_prepaid_sum, 'reason': 'Аванс'})
+                debts_sum += debt_prepaid_sum
             if retention > 0 and act_sum > ctr.total_sum:
                 debts.append({'contract': ctr, 'sum': retention, 'reason': 'Возврат удержаний'})
+                debts_sum += retention
 
         for email in options["emails"]:
             try:
@@ -76,7 +84,9 @@ class Command(BaseCommand):
                     '',
                     settings.DEFAULT_FROM_EMAIL,
                     [email],
-                    html_message=render_to_string('email.html', {'changes': changes, 'debts': debts})
+                    html_message=render_to_string('email.html', {'changes': changes,
+                                                                 'debts': debts,
+                                                                 'debts_sum': debts_sum}),
                 )
             except BaseException as e:
                 pass

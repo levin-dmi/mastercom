@@ -5,10 +5,17 @@
 <div class="card border-secondary mb-4 overflow-auto">
     <div class="card-header d-flex">
         <h5 class="mb-0 me-2">{{ contract.name }}</h5>
-        <a href="{% url 'contract_update' contract.pk %}" role="button" class="me-2">редактировать</a>
-        <a href="{% url 'contract_delete' contract.pk %}" role="button" class="me-2">удалить</a>
-        <a href="{% url 'act_add_to_ctr' contract.pk %}" role="button" class="me-2">+ акт</a>
-        <a href="{% url 'payment_add_to_ctr' contract.pk %}" role="button">+ платеж</a>
+        {% if 'inc/' in request.path or request.path == '/incoming/' %}
+            <a href="{% url 'contract_update' contract.pk %}" role="button" class="me-2">редактировать</a>
+            <a href="{% url 'contract_delete' contract.pk %}" role="button" class="me-2">удалить</a>
+            <a href="{% url 'act_add_to_ctr' contract.pk %}" role="button" class="me-2">+ акт</a>
+            <a href="{% url 'payment_add_to_ctr' contract.pk %}" role="button">+ платеж</a>
+        {% else %}
+            <a href="{% url 'contract_contractor_update' contract.pk %}" role="button" class="me-2">редактировать</a>
+            <a href="{% url 'contract_contractor_delete' contract.pk %}" role="button" class="me-2">удалить</a>
+            <a href="{% url 'act_contractor_add_to_ctr' contract.pk %}" role="button" class="me-2">+ акт</a>
+            <a href="{% url 'payment_contractor_add_to_ctr' contract.pk %}" role="button">+ платеж</a>
+        {% endif %}
     </div><!-- /card-header -->
 
     <div class="row p-3">

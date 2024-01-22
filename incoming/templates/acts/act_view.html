@@ -12,7 +12,7 @@
 <p><strong>Сумма материалов: </strong>{{ act.material_sum|currency }}</p>
 <p><strong>Сумма работ: </strong>{{ act.work_sum|currency }}</p>
 <br>
-
+{% if 'inc/' in request.path %}
 {% if calc.can_calculate %}
 <h4 class="text-success">Cумма счета по условиям договора {{ calc.sum|currency }} &#8381;</h4>
 {% else %}
@@ -30,6 +30,7 @@
 {% if calc.no_prepaid %}
 <h4 class="text-success">Сумма счета с учетом невыплаты клиентом аванса {{ calc.sum_corr|currency }} &#8381;</h4>
 Фактическая выплата аванса по договору составила {{ calc.fact_prepaid|currency }} &#8381; (на сегодня)
+{% endif %}
 {% endif %}
 {% endblock %}
 

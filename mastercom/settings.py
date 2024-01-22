@@ -118,7 +118,7 @@ STATICFILES_DIRS = [Path(__file__).resolve().parent.parent / 'assets']
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_URL = '/accounts/login'
-LOGIN_REDIRECT_URL = '/incoming'
+LOGIN_REDIRECT_URL = '/'
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

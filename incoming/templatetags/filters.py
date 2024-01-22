@@ -17,3 +17,8 @@ def currency(value):
 @register.filter
 def get_obj_attr(obj, attr):
     return getattr(obj, attr)
+
+
+@register.filter
+def has_group(user, group_name):
+    return user.groups.filter(name=group_name).exists()

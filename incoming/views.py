@@ -2,78 +2,35 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormMixin
+from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.views.generic import TemplateView
 from django.views.generic.list import ListView
 from django.urls import reverse_lazy
 from django.db.models import Q, Sum, FloatField
 from .models import *
 from .forms import *
 from .services.calculations import *
-from incoming.utils.mixins import LogCreateMixin, LogUpdateMixin, LogDeleteMixin
+from incoming.utils.mixins import LogCreateMixin, LogUpdateMixin, LogDeleteMixin, UserGroupTestMixin
 from django.http import HttpResponse, HttpResponseRedirect
 from .utils.filters import ActFilter, PaymentFilter, ContractFilter
 from django_filters.views import FilterView
+from django.contrib.auth.mixins import UserPassesTestMixin
 
 
-@login_required()
-def index(request):
-    objs = {}
-    for ctr in Contract.objects.filter(contract_type=Contract.ContractType.SALE):
-        if ctr.project.key not in objs:
-            objs[ctr.project.key] = {'name': ctr.project, 'pk': ctr.project.pk, 'contracts': {}, 'sum': {}}
+class AnalyticView(UserGroupTestMixin, TemplateView):
+    user_groups = ['Доходы']
+    template_name = 'analytic.html'
 
-        act_sum = Act.objects.aggregate(
-            sum=Sum('total_sum',filter=Q(contract__pk=ctr.pk)))['sum'] or DEC0
-        pay_sum = Payment.objects.aggregate(
-            sum=Sum('total_sum', filter=Q(contract__pk=ctr.pk)))['sum'] or DEC0
-        prepaid_pay_sum = Payment.objects.aggregate(
-            sum=Sum('prepaid_sum', filter=Q(contract__pk=ctr.pk)))['sum'] or DEC0
-        retention_pay_sum = Payment.objects.aggregate(
-            sum=Sum('retention_sum', filter=Q(contract__pk=ctr.pk)))['sum'] or DEC0
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['env'] = {'header': 'Аналитика'}
+        objs = ContractAnalyticService().calc_contract_list_data()
+        context['objs'] = objs
+        return context
 
 
-        if ctr.can_calculated():
-            debt_act_sum = (calc_paid_from_acts_d(ctr.total_sum,
-                                               ctr.prepaid,
-                                               PrepaidType(ctr.prepaid_close_method.key if ctr.prepaid_close_method else -1),
-                                               ctr.retention_percent,
-                                               act_sum)
-                            - (pay_sum - prepaid_pay_sum - retention_pay_sum))
-            debt_prepaid_sum = ctr.prepaid - prepaid_pay_sum
-            retention = (act_sum * ctr.retention_percent / 100 - retention_pay_sum).quantize(DEC1)
-            objs[ctr.project.key]['sum']['debt_act_sum'] = (
-                    objs[ctr.project.key]['sum'].get('debt_act_sum', 0) + debt_act_sum)
-            objs[ctr.project.key]['sum']['debt_prepaid_sum'] = (
-                    objs[ctr.project.key]['sum'].get('debt_prepaid_sum', 0) + debt_prepaid_sum)
-            objs[ctr.project.key]['sum']['retention'] = (
-                    objs[ctr.project.key]['sum'].get('retention', 0) + retention)
-        else:
-            debt_act_sum, debt_prepaid_sum, retention = '?' * 3
-
-        objs[ctr.project.key]['contracts'][ctr.pk] = {'pk': ctr.pk,
-                                                      'num_name': f"{ctr.number} ({ctr.name})",
-                                                      'date': ctr.date,
-                                                      'total_sum': ctr.total_sum,
-                                                      'act_sum': act_sum,
-                                                      'pay_sum': pay_sum,
-
-                                                      'debt_act_sum': debt_act_sum,
-                                                      'debt_prepaid_sum': debt_prepaid_sum,
-                                                      'retention': retention,
-                                                      }
-
-        objs[ctr.project.key]['sum']['total_sum'] = (
-                objs[ctr.project.key]['sum'].get('total_sum', 0) + (ctr.total_sum or 0))
-        objs[ctr.project.key]['sum']['act_sum'] = objs[ctr.project.key]['sum'].get('act_sum', 0) + act_sum
-        objs[ctr.project.key]['sum']['pay_sum'] = objs[ctr.project.key]['sum'].get('pay_sum', 0) + pay_sum
-
-
-    env = {'header': 'Аналитика'}
-    context = {'objs': objs, 'env': env, }
-    return render(request, 'analytic.html', context)
-
-
-class ProjectsView(LoginRequiredMixin, ListView):
+class ProjectsView(UserGroupTestMixin, ListView):
+    user_groups = ['Доходы']
     model = Project
     template_name = 'list_view2.html'
     context_object_name = 'objs'
@@ -88,26 +45,30 @@ class ProjectsView(LoginRequiredMixin, ListView):
                       }}
 
 
-class ProjectDetailView(LoginRequiredMixin, DetailView):
+class ProjectDetailView(UserGroupTestMixin, DetailView):
+    user_groups = ['Доходы']
     model = Project
     template_name = 'projects/project_view.html'
 
 
-class ProjectCreateView(LoginRequiredMixin, CreateView):
+class ProjectCreateView(UserGroupTestMixin, CreateView):
+    user_groups = ['Доходы']
     template_name = 'projects/project_create.html'
     form_class = ProjectForm
     success_url = reverse_lazy('projects')
     extra_content = {'env':{'header': 'Новый проект'}}
 
 
-class ProjectUpdateView(LoginRequiredMixin, UpdateView):
+class ProjectUpdateView(UserGroupTestMixin, UpdateView):
+    user_groups = ['Доходы']
     model = Project
     template_name = 'projects/project_update.html'
     form_class = ProjectForm
     success_url = reverse_lazy('projects')
 
 
-class ProjectDeleteView(LoginRequiredMixin, DeleteView):
+class ProjectDeleteView(UserGroupTestMixin, DeleteView):
+    user_groups = ['Доходы']
     model = Project
     template_name = 'projects/project_delete.html'
     success_url = reverse_lazy('projects')
@@ -118,7 +79,8 @@ class ProjectDeleteView(LoginRequiredMixin, DeleteView):
         return context
 
 
-class ContractsView(LoginRequiredMixin, FilterView):
+class ContractsView(UserGroupTestMixin, FilterView):
+    user_groups = ['Доходы']
     template_name = 'list_view2.html'
     context_object_name = 'objs'
     filterset_class = ContractFilter
@@ -138,7 +100,8 @@ class ContractsView(LoginRequiredMixin, FilterView):
     queryset = Contract.objects.filter(contract_type=Contract.ContractType.SALE)
 
 
-class ContractDetailView(LoginRequiredMixin, DetailView):
+class ContractDetailView(UserGroupTestMixin, DetailView):
+    user_groups = ['Доходы']
     model = Contract
     template_name = 'contracts/contract_view.html'
 
@@ -151,11 +114,12 @@ class ContractDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-class ContractCreateView(LoginRequiredMixin, LogCreateMixin, CreateView):
+class ContractCreateView(UserGroupTestMixin, LogCreateMixin, CreateView):
+    user_groups = ['Доходы']
     template_name = 'contracts/contract_create.html'
     form_class = ContractForm
     success_url = reverse_lazy('contracts')
-    log_data = ['number', 'date', 'total_sum']
+    log_data = ['number', 'date', 'total_sum', 'contract_type']
     initial = {'contract_type': Contract.ContractType.SALE}
 
     def get_context_data(self, **kwargs):
@@ -166,19 +130,21 @@ class ContractCreateView(LoginRequiredMixin, LogCreateMixin, CreateView):
         return context
 
 
-class ContractUpdateView(LoginRequiredMixin, LogUpdateMixin, UpdateView):
+class ContractUpdateView(UserGroupTestMixin, LogUpdateMixin, UpdateView):
+    user_groups = ['Доходы']
     model = Contract
     template_name = 'contracts/contract_update.html'
     form_class = ContractForm
     success_url = reverse_lazy('contracts')
-    log_data = ['number', 'date', 'total_sum'], ['total_sum']
+    log_data = ['number', 'date', 'total_sum', 'contract_type'], ['total_sum']
 
 
-class ContractDeleteView(LoginRequiredMixin, LogDeleteMixin, DeleteView):
+class ContractDeleteView(UserGroupTestMixin, LogDeleteMixin, DeleteView):
+    user_groups = ['Доходы']
     model = Contract
     template_name = 'contracts/contract_delete.html'
     success_url = reverse_lazy('contracts')
-    log_data = ['number', 'date', 'total_sum']
+    log_data = ['number', 'date', 'total_sum', 'contract_type']
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -189,10 +155,12 @@ class ContractDeleteView(LoginRequiredMixin, LogDeleteMixin, DeleteView):
         return context
 
 
-class ActsView(LoginRequiredMixin, FilterView):
+class ActsView(UserGroupTestMixin, FilterView):
+    user_groups = ['Доходы']
     template_name = 'list_view2.html'
     context_object_name = 'objs'
     filterset_class = ActFilter
+    queryset = Act.objects.filter(contract__contract_type=Contract.ContractType.SALE)
     extra_context = {'env': {'header': 'Акты',
                              'create_url': 'act_add',
                              'update_url': 'act_update',
@@ -206,41 +174,23 @@ class ActsView(LoginRequiredMixin, FilterView):
                           }}
 
 
-@login_required()
-def act_view(request, act_id):
-    act = Act.objects.get(pk=act_id)
-    calc = {'can_calculate': False, 'no_prepaid': False}
-    if act.contract.can_calculated():
-        calc['can_calculate'] = True
-        calc['sum'] = calc_paid_from_acts_d(act.contract.total_sum,
-                                            act.contract.prepaid,
-                                            PrepaidType(
-                                                act.contract.prepaid_close_method.key if act.contract.prepaid_close_method else -1),
-                                            act.contract.retention_percent,
-                                            act.total_sum)
-        calc['acts_sum'] = Act.objects.aggregate(
-            sum=Sum('total_sum', filter=Q(contract__pk=act.contract.pk)))['sum'] or DEC0
+class ActDetailView(UserGroupTestMixin, DetailView):
+    user_groups = ['Доходы']
+    model = Act
+    template_name = 'acts/act_view.html'
 
-        fact_prepaid = Payment.objects.aggregate(
-            sum=Sum('prepaid_sum', filter=Q(contract__pk=act.contract.pk)))['sum'] or DEC0
-        if fact_prepaid < act.contract.prepaid:
-            calc['no_prepaid'] = True
-            calc['sum_corr'] = calc_paid_from_acts_d(act.contract.total_sum,
-                                                fact_prepaid,
-                                                     PrepaidType(
-                                                         act.contract.prepaid_close_method.key if act.contract.prepaid_close_method else -1),
-                                                act.contract.retention_percent,
-                                                act.total_sum)
-            calc['fact_prepaid'] = fact_prepaid
-    context = {'act': act, 'calc': calc}
-    return render(request, 'acts/act_view.html', context)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['calc'] = ContractAnalyticService().calc_act(context['object'].pk)
+        return context
 
 
-class ActCreateView(LoginRequiredMixin, LogCreateMixin, CreateView):
+class ActCreateView(UserGroupTestMixin, LogCreateMixin, CreateView):
+    user_groups = ['Доходы']
     template_name = 'acts/act_create.html'
     form_class = ActForm
-    success_url = reverse_lazy('acts')
-    log_data = ['number', 'date', 'total_sum']
+    # success_url = reverse_lazy('acts')
+    log_data = ['number', 'date', 'total_sum', 'contract__contract_type']
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -251,24 +201,28 @@ class ActCreateView(LoginRequiredMixin, LogCreateMixin, CreateView):
 
     def get_success_url(self):
         act_id = self.object.id
-        return reverse_lazy('act_view', kwargs={'act_id': act_id})
+        return reverse_lazy('act_view', kwargs={'pk': act_id})
 
-class ActUpdateView(LoginRequiredMixin, LogUpdateMixin, UpdateView):
+
+class ActUpdateView(UserGroupTestMixin, LogUpdateMixin, UpdateView):
+    user_groups = ['Доходы']
     model = Act
     template_name = 'acts/act_update.html'
     form_class = ActForm
     success_url = reverse_lazy('acts')
-    log_data = ['number', 'date', 'total_sum'], ['total_sum']
+    log_data = ['number', 'date', 'total_sum', 'contract__contract_type'], ['total_sum']
 
 
-class ActDeleteView(LoginRequiredMixin, LogDeleteMixin, DeleteView):
+class ActDeleteView(UserGroupTestMixin, LogDeleteMixin, DeleteView):
+    user_groups = ['Доходы']
     model = Act
     template_name = 'acts/act_delete.html'
     success_url = reverse_lazy('acts')
-    log_data = ['number', 'date', 'total_sum']
+    log_data = ['number', 'date', 'total_sum', 'contract__contract_type']
 
 
-class PaymentsView(LoginRequiredMixin, FilterView):
+class PaymentsView(UserGroupTestMixin, FilterView):
+    user_groups = ['Доходы']
     template_name = 'list_view2.html'
     context_object_name = 'objs'
     filterset_class = PaymentFilter
@@ -287,16 +241,18 @@ class PaymentsView(LoginRequiredMixin, FilterView):
                           }}
 
 
-class PaymentDetailView(LoginRequiredMixin, DetailView):
+class PaymentDetailView(UserGroupTestMixin, DetailView):
+    user_groups = ['Доходы']
     model = Payment
     template_name = 'payments/payment_view.html'
 
 
-class PaymentCreateView(LoginRequiredMixin, LogCreateMixin, CreateView):
+class PaymentCreateView(UserGroupTestMixin, LogCreateMixin, CreateView):
+    user_groups = ['Доходы']
     template_name = 'payments/payment_create.html'
     form_class = PaymentForm
     success_url = reverse_lazy('payments')
-    log_data = ['number', 'date', 'total_sum']
+    log_data = ['number', 'date', 'total_sum', 'contract__contract_type']
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -306,23 +262,25 @@ class PaymentCreateView(LoginRequiredMixin, LogCreateMixin, CreateView):
         return context
 
 
-class PaymentUpdateView(LoginRequiredMixin, LogUpdateMixin, UpdateView):
+class PaymentUpdateView(UserGroupTestMixin, LogUpdateMixin, UpdateView):
+    user_groups = ['Доходы']
     model = Payment
     template_name = 'payments/payment_update.html'
     form_class = PaymentForm
     success_url = reverse_lazy('payments')
-    log_data = ['number', 'date', 'total_sum'], ['total_sum']
+    log_data = ['number', 'date', 'total_sum', 'contract__contract_type'], ['total_sum']
 
 
-class PaymentDeleteView(LoginRequiredMixin, LogDeleteMixin, DeleteView):
+class PaymentDeleteView(UserGroupTestMixin, LogDeleteMixin, DeleteView):
+    user_groups = ['Доходы']
     model = Payment
     template_name = 'payments/payment_delete.html'
     success_url = reverse_lazy('payments')
-    log_data = ['number', 'date', 'total_sum']
+    log_data = ['number', 'date', 'total_sum', 'contract__contract_type']
 
 
-
-class PartnersView(LoginRequiredMixin, ListView):
+class PartnersView(UserGroupTestMixin, ListView):
+    user_groups = ['Подрядчики']
     model = Partner
     template_name = 'list_view2.html'
     context_object_name = 'objs'
@@ -336,19 +294,22 @@ class PartnersView(LoginRequiredMixin, ListView):
                           }}
 
 
-class PartnerDetailView(LoginRequiredMixin, DetailView):
+class PartnerDetailView(UserGroupTestMixin, DetailView):
+    user_groups = ['Подрядчики']
     model = Partner
     template_name = 'partners/partner_view.html'
 
 
-class PartnerCreateView(LoginRequiredMixin, CreateView):
+class PartnerCreateView(UserGroupTestMixin, CreateView):
+    user_groups = ['Подрядчики']
     template_name = 'create.html'
     form_class = PartnerForm
     success_url = reverse_lazy('partners')
     extra_context = {'env': {'header': 'Новый партнер',}}
 
 
-class PartnerUpdateView(LoginRequiredMixin, UpdateView):
+class PartnerUpdateView(UserGroupTestMixin, UpdateView):
+    user_groups = ['Подрядчики']
     model = Partner
     template_name = 'create.html'
     form_class = PartnerForm
@@ -356,7 +317,8 @@ class PartnerUpdateView(LoginRequiredMixin, UpdateView):
     extra_context = {'env': {'header': 'Обновить данные партнера', }}
 
 
-class PartnerDeleteView(LoginRequiredMixin, DeleteView):
+class PartnerDeleteView(UserGroupTestMixin, DeleteView):
+    user_groups = ['Подрядчики']
     model = Partner
     template_name = 'partners/partner_delete.html'
     success_url = reverse_lazy('partners')
@@ -369,6 +331,7 @@ class PartnerDeleteView(LoginRequiredMixin, DeleteView):
 
 
 class ContractsContractorView(ContractsView):
+    user_groups = ['Подрядчики']
     queryset = Contract.objects.filter(contract_type=Contract.ContractType.BUY)
 
     def get_context_data(self, **kwargs):
@@ -381,6 +344,7 @@ class ContractsContractorView(ContractsView):
 
 
 class ContractContractorDetailView(ContractDetailView):
+    user_groups = ['Подрядчики']
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         header = f"Договор №{context['object'].number} от {context['object'].date}  [{context['object'].partner}]"
@@ -390,6 +354,7 @@ class ContractContractorDetailView(ContractDetailView):
 
 
 class ContractContractorCreateView(ContractCreateView):
+    user_groups = ['Подрядчики']
     form_class = ContractForm
     success_url = reverse_lazy('contracts_contractor')
     initial = {'contract_type': Contract.ContractType.BUY}
@@ -402,14 +367,55 @@ class ContractContractorCreateView(ContractCreateView):
 
 
 class ContractContractorUpdateView(ContractUpdateView):
+    user_groups = ['Подрядчики']
     success_url = reverse_lazy('contracts_contractor')
 
 
 class ContractContractorDeleteView(ContractDeleteView):
+    user_groups = ['Подрядчики']
     success_url = reverse_lazy('contracts_contractor')
 
 
+class ActContractorView(ActsView):
+    user_groups = ['Подрядчики']
+    queryset = Act.objects.filter(contract__contract_type=Contract.ContractType.BUY)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['env']['columns'][0]['url'] = 'act_contractor_view'
+        context['env']['create_url'] = 'act_contractor_add'
+        context['env']['update_url'] = 'act_contractor_update'
+        context['env']['delete_url'] = 'act_contractor_delete'
+        return context
+
+class ActContractorDetailView(LoginRequiredMixin, DetailView):
+    user_groups = ['Подрядчики']
+    model = Act
+    template_name = 'acts/act_view.html'
+
+
+class ActContractorCreateView(ActCreateView):
+    user_groups = ['Подрядчики']
+    form_class = ActContractorForm
+
+    def get_success_url(self):
+        act_id = self.object.id
+        return reverse_lazy('act_contractor_view', kwargs={'pk': act_id})
+
+
+class ActContractorUpdateView(ActUpdateView):
+    user_groups = ['Подрядчики']
+    form_class = ActContractorForm
+    success_url = reverse_lazy('acts_contractor')
+
+
+class ActContractorDeleteView(ActDeleteView):
+    user_groups = ['Подрядчики']
+    success_url = reverse_lazy('acts_contractor')
+
+
 class PaymentContractorView(PaymentsView):
+    user_groups = ['Подрядчики']
     queryset = Payment.objects.filter(contract__contract_type=Contract.ContractType.BUY)
 
     def get_context_data(self, **kwargs):
@@ -420,84 +426,53 @@ class PaymentContractorView(PaymentsView):
         context['env']['delete_url'] = 'payment_contractor_delete'
         return context
 
+
 class PaymentContractorDetailView(PaymentDetailView):
-    pass
+    user_groups = ['Подрядчики']
 
 
 class PaymentContractorCreateView(PaymentCreateView):
+    user_groups = ['Подрядчики']
     form_class = PaymentContractorForm
     success_url = reverse_lazy('payments_contractor')
 
 
 class PaymentContractorUpdateView(PaymentUpdateView):
+    user_groups = ['Подрядчики']
     form_class = PaymentContractorForm
     success_url = reverse_lazy('payments_contractor')
 
 
 class PaynmentContractorDeleteView(PaymentDeleteView):
+    user_groups = ['Подрядчики']
     success_url = reverse_lazy('payments_contractor')
 
 
-@login_required()
-def analytic_contractor(request):
-    objs = {}
-    for ctr in Contract.objects.filter(contract_type=Contract.ContractType.BUY):
-        if ctr.partner.inn not in objs:
-            objs[ctr.partner.inn] = {'name': ctr.partner, 'pk': ctr.partner.pk, 'contracts': {}, 'sum': {}}
+class AnalyticContractorView(AnalyticView):
+    user_groups = ['Подрядчики']
 
-        act_sum = Act.objects.aggregate(
-            sum=Sum('total_sum',filter=Q(contract__pk=ctr.pk)))['sum'] or DEC0
-        pay_sum = Payment.objects.aggregate(
-            sum=Sum('total_sum', filter=Q(contract__pk=ctr.pk)))['sum'] or DEC0
-        prepaid_pay_sum = Payment.objects.aggregate(
-            sum=Sum('prepaid_sum', filter=Q(contract__pk=ctr.pk)))['sum'] or DEC0
-        retention_pay_sum = Payment.objects.aggregate(
-            sum=Sum('retention_sum', filter=Q(contract__pk=ctr.pk)))['sum'] or DEC0
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['env'] = {'header': 'Аналитика по подрядчикам'}
+        objs = ContractAnalyticService().calc_partner_list_data()
+        context['objs'] = objs
+        return context
 
-
-        if ctr.can_calculated():
-            debt_act_sum = (calc_paid_from_acts_d(ctr.total_sum,
-                                               ctr.prepaid,
-                                               PrepaidType(ctr.prepaid_close_method.key if ctr.prepaid_close_method else -1),
-                                               ctr.retention_percent,
-                                               act_sum)
-                            - (pay_sum - prepaid_pay_sum - retention_pay_sum))
-            debt_prepaid_sum = ctr.prepaid - prepaid_pay_sum
-            retention = (act_sum * ctr.retention_percent / 100 - retention_pay_sum).quantize(DEC1)
-            objs[ctr.partner.inn]['sum']['debt_act_sum'] = (
-                    objs[ctr.partner.inn]['sum'].get('debt_act_sum', 0) + debt_act_sum)
-            objs[ctr.partner.inn]['sum']['debt_prepaid_sum'] = (
-                    objs[ctr.partner.inn]['sum'].get('debt_prepaid_sum', 0) + debt_prepaid_sum)
-            objs[ctr.partner.inn]['sum']['retention'] = (
-                    objs[ctr.partner.inn]['sum'].get('retention', 0) + retention)
-        else:
-            debt_act_sum, debt_prepaid_sum, retention = '?' * 3
-
-        objs[ctr.partner.inn]['contracts'][ctr.pk] = {'pk': ctr.pk,
-                                                      'num_name': f"{ctr.number} ({ctr.name})",
-                                                      'date': ctr.date,
-                                                      'total_sum': ctr.total_sum,
-                                                      'act_sum': act_sum,
-                                                      'pay_sum': pay_sum,
-
-                                                      'debt_act_sum': debt_act_sum,
-                                                      'debt_prepaid_sum': debt_prepaid_sum,
-                                                      'retention': retention,
-                                                      }
-
-        objs[ctr.partner.inn]['sum']['total_sum'] = (
-                objs[ctr.partner.inn]['sum'].get('total_sum', 0) + (ctr.total_sum or 0))
-        objs[ctr.partner.inn]['sum']['act_sum'] = objs[ctr.partner.inn]['sum'].get('act_sum', 0) + act_sum
-        objs[ctr.partner.inn]['sum']['pay_sum'] = objs[ctr.partner.inn]['sum'].get('pay_sum', 0) + pay_sum
-
-
-    env = {'header': 'Аналитика'}
-    context = {'objs': objs, 'env': env, }
-    return render(request, 'analytic.html', context)
+# @login_required()
+# def analytic_contractor(request):
+#     objs = ContractAnalyticService().calc_contract_list_data()
+#     env = {'header': 'Аналитика'}
+#     context = {'objs': objs, 'env': env, }
+#     return render(request, 'analytic.html', context)
 
 
 def redirect_to_incoming(request):
-    response = redirect('/incoming/')
+    if request.user.groups.filter(name='Доходы').exists():
+        response = redirect('/incoming/')
+    elif request.user.groups.filter(name='Подрядчики').exists():
+        response = redirect('/incoming/ctr/analytic_contractor/')
+    else:
+        response = redirect('/accounts/login/')
     return response
 
 

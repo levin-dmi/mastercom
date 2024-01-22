@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 {% load static %}
+{% load filters %}
 
 <html lang="ru">
 <head>
@@ -25,7 +26,7 @@
 </head>
 
 <body>
-<main class="d-flex flex-nowrap"> 
+<main class="d-flex flex-nowrap">
 
     <!-- Левая панель-->
     <div class="d-flex flex-column flex-shrink-0 ps-3 pe-3 pb-3 text-bg-dark sidebar sidebar-sticky" style="width: 260px;position: fixed;top: 0;bottom: 0;"> 
@@ -39,12 +40,17 @@
 
         <ul class="nav nav-pills flex-column mb-auto">
         <li class="nav-item mb-3">
-            <a href="{% url 'index' %}" class="nav-link {% if 'inc/' in request.path or request.path == '/incoming/' %} active {% endif %}" aria-current="page">
+            <a href="{% url 'index' %}" class="nav-link
+                                        {% if 'inc/' in request.path or request.path == '/incoming/' %} active {% endif %}
+                                        {% if not request.user|has_group:"Доходы" %} disabled {% endif %}"
+                    aria-current="page">
             Доходы
             </a>
         </li>
         <li class="nav-item mb-3">
-            <a href="{% url 'analytic_contractor' %}" class="nav-link {% if 'ctr/' in request.path %} active {% endif %}" aria-current="page">
+            <a href="{% url 'analytic_contractor' %}" class="nav-link {% if 'ctr/' in request.path %} active {% endif %}
+                                                                       {% if not request.user|has_group:"Подрядчики" %} disabled {% endif %} "
+                    aria-current="page">
             Подрядчики
             </a>
         </li>
@@ -71,8 +77,12 @@
     </div> <!-- Левая панель-->
 
 
-    <div class="container-fluid" style="padding: 0 0 0 260px;"> <!-- Правая панель-->
-        <nav class="navbar navbar-expand-lg sticky-top justify-content-center navbar-light bg-light pt-2 pb-2" style ="border-bottom: 1px solid lightgray; ">
+    <div class="container-fluid" style="padding: 0 0 0 260px; "> <!-- Правая панель-->
+        {% if 'inc/' in request.path or request.path == '/incoming/' %}
+            <nav class="navbar navbar-expand-lg sticky-top justify-content-center navbar-light bg-light pt-2 pb-2" style ="border-bottom: 1px solid lightgray; ">
+        {% else %}
+            <nav class="navbar navbar-expand-lg sticky-top justify-content-center navbar-light bg-light pt-2 pb-2" style ="border-bottom: 1px solid lightgray; background-color: lavender !important;">
+        {% endif %}
         <div class="container-fluid">
             <!-- Иконка для разворота меню-->
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,7 +119,7 @@
                     <a href="{% url 'contracts_contractor' %}" {% if '/contracts/' in request.path %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Договоры</a>
                 </li>
                 <li class="nav-item">
-                    <a href="{% url 'acts' %}" {% if '/acts/' in request.path %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Акты</a>
+                    <a href="{% url 'acts_contractor' %}" {% if '/acts/' in request.path %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Акты</a>
                 </li>
                 <li class="nav-item">
                     <a href="{% url 'payments_contractor' %}" {% if '/payments/' in request.path %} class="nav-link active" aria-current="page" {% else %} class="nav-link" {% endif %}>Оплаты</a>
