@@ -238,7 +238,7 @@ class ContractAnalyticService:
 
             working = list([[material_sum, material_act_sum, material_sum - material_act_sum],
                             [work_sum, work_act_sum, work_sum - work_act_sum],
-                            [total_sum - material_sum - work_act_sum,
+                            [total_sum - material_sum - work_sum,
                              act_sum - material_act_sum - work_act_sum,
                              total_sum - material_sum - work_sum - (act_sum - material_act_sum - work_act_sum)],
                             [total_sum, act_sum, total_sum - act_sum], ])

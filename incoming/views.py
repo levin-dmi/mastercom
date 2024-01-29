@@ -1,20 +1,16 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.views.generic import TemplateView
 from django.views.generic.list import ListView
 from django.urls import reverse_lazy
-from django.db.models import Q, Sum, FloatField
 from .models import *
 from .forms import *
 from .services.calculations import *
 from incoming.utils.mixins import LogCreateMixin, LogUpdateMixin, LogDeleteMixin, UserGroupTestMixin
-from django.http import HttpResponse, HttpResponseRedirect
 from .utils.filters import ActFilter, PaymentFilter, ContractFilter
 from django_filters.views import FilterView
-from django.contrib.auth.mixins import UserPassesTestMixin
 
 
 class AnalyticView(UserGroupTestMixin, TemplateView):
@@ -189,14 +185,12 @@ class ActCreateView(UserGroupTestMixin, LogCreateMixin, CreateView):
     user_groups = ['Доходы']
     template_name = 'acts/act_create.html'
     form_class = ActForm
-    # success_url = reverse_lazy('acts')
     log_data = ['number', 'date', 'total_sum', 'contract__contract_type']
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if 'contract_id' in context['view'].kwargs:
             context['form'].initial['contract'] = context['view'].kwargs['contract_id']
-
         return context
 
     def get_success_url(self):

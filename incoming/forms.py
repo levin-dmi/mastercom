@@ -26,7 +26,7 @@ class ContractForm(ModelForm):
                   'prepaid', 'prepaid_close_method', 'retention_percent', 'status')
 
     def clean_total_sum(self):
-        total_sum = (self.cleaned_data['total_sum'] or 0)
+        total_sum = self.cleaned_data['total_sum'] or 0
 
         # Проверяем
         if (total_sum or 0) < Decimal(self.data['material_sum'] or 0) + Decimal(self.data['work_sum'] or 0):
@@ -42,6 +42,12 @@ class ContractForm(ModelForm):
             raise ValidationError('Сумма аванса не может быть больше общей суммы')
 
         return self.cleaned_data['prepaid']
+
+    def clean_material_sum(self):
+        return self.cleaned_data['material_sum'] or 0
+
+    def clean_work_sum(self):
+        return self.cleaned_data['work_sum'] or 0
 
 class ActForm(ModelForm):
     class Meta:
@@ -60,6 +66,12 @@ class ActForm(ModelForm):
             raise ValidationError('Общая сумма не может быть меньше сумм материалов и работ')
 
         return self.cleaned_data['total_sum']
+
+    def clean_material_sum(self):
+        return self.cleaned_data['material_sum'] or 0
+
+    def clean_work_sum(self):
+        return self.cleaned_data['work_sum'] or 0
 
 
 class ActContractorForm(ActForm):

@@ -3,8 +3,13 @@
 
 {% block content %}
 <h3 class="text-primary" style="display:inline">Акт № {{ act.number }}</h3>
-<a href="{% url 'act_update' act.pk %}" role="button" class="me-2" >редактировать</a>
-<a href="{% url 'act_delete' act.pk %}" role="button" class="me-2">удалить</a><br><br>
+{% if 'inc/' in request.path or request.path == '/incoming/' %}
+    <a href="{% url 'act_update' act.pk %}" role="button" class="me-2" >редактировать</a>
+    <a href="{% url 'act_delete' act.pk %}" role="button" class="me-2">удалить</a><br><br>
+{% else %}
+    <a href="{% url 'act_contractor_update' act.pk %}" role="button" class="me-2" >редактировать</a>
+    <a href="{% url 'act_contractor_delete' act.pk %}" role="button" class="me-2">удалить</a><br><br>
+{% endif %}
 <p><strong>Дата: </strong>{{ act.date }}</p>
 <p><strong>Договор: </strong>{{ act.contract.number }}</p>
 <p><strong>Статус: </strong>{{ act.status.name }}</p>

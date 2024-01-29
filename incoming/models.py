@@ -40,7 +40,6 @@ class Contract(models.Model):
         SALE = 'sale', 'Продажа'
         BUY = 'buy', 'Закупка'
 
-
     number = models.CharField(max_length=16, db_index=True, null=True, blank=True, verbose_name='Номер')
     date = models.DateField(null=True, blank=True, verbose_name='Дата')
     name = models.CharField(max_length=32, null=True, blank=True, verbose_name='Название')
